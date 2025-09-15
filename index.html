@@ -225,7 +225,6 @@
 
         // --- USER CONFIGURATION ---
         const USERS = {
-            'povk35808@gmail.com': 'MMK',
             'bonchantha43@gmail.com': 'ប៊ន ចន្ថា',
             'chhanonlork87@gmail.com': 'ឡោក ឆាណុន',
             'roeunsreyneth2026@gmail.com': 'រឿន ស្រណែត',
@@ -441,20 +440,26 @@
             row.dataset.rowIndex = item.rowIndex; 
 
             row.innerHTML = `
-                <td class="px-4 py-2 border-b text-sm font-bold">${item.data[0] || ''}</td>  <!-- លរ# (A) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>  <!-- ក្រុម (B) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>  <!-- ថ្នាក់ (C) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>  <!-- ផ្នែកការងារ (D) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>  <!-- ឈ្មោះ (E) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>  <!-- ភេទ (F) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[6] || ''}</td>  <!-- អត្តលេខ (G) -->
-                <td class="px-4 py-2 border-b text-sm">${formatDateForDisplay(item.data[7])}</td> <!-- កាលបរិច្ឆេទ (H) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[8] || ''}</td>  <!-- កាលវិភាគ (I) -->
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${item.data[9] || ''}</td>  <!-- ម៉ោងចូល (J) -->
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${item.data[10] || ''}</td> <!-- ម៉ោងចេញ (K) -->
+                <td class="px-4 py-2 border-b text-sm font-bold">${item.data[0] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[6] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${formatDateForDisplay(item.data[7])}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[8] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${item.data[9] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${item.data[10] || ''}</td>
             `;
 
-            row.addEventListener('click', () => {
+            row.addEventListener('click', (e) => {
+                // Find the clicked cell
+                const targetCell = e.target.closest('td');
+                // Prevent modal from opening if a cell for editing ('ម៉ោងចូល', 'ម៉ោងចេញ') is clicked
+                if (targetCell && targetCell.isContentEditable) {
+                    return; 
+                }
                 openModal(item.data);
             });
             dataTableBody.appendChild(row);
