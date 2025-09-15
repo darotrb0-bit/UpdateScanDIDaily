@@ -49,141 +49,146 @@
 </head>
 <body class="text-gray-800">
 
-    <!-- Login Overlay -->
-    <div id="loginOverlay" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
-            <h2 class="text-2xl font-koulen text-blue-600 text-center mb-6">សូមចូលប្រើប្រព័ន្ធ</h2>
-            <div class="space-y-4">
-                <div>
-                    <label for="userSelect" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើសគណនីរបស់អ្នក</label>
-                    <select id="userSelect" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- សូមជ្រើសរើស --</option>
-                    </select>
-                </div>
-                <button id="sendOtpBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg>
-                    <span>ផ្ញើលេខកូដ (OTP)</span>
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm text-center">
+            <h2 class="text-2xl font-koulen text-blue-600 mb-2">សូមចូលប្រើប្រព័ន្ធ</h2>
+            <p class="text-gray-600 mb-6">ជ្រើសរើសគណនីរបស់អ្នកដើម្បីបន្ត</p>
+            
+            <div id="login-form">
+                <select id="user-select" class="w-full p-3 border border-gray-300 rounded-md mb-4 text-center">
+                    <option value="">-- ជ្រើសរើសឈ្មោះ --</option>
+                </select>
+                <button id="send-otp-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>
+                    <span>ផ្ញើលេខកូដ (OTP) ម្ដងទៀត</span>
                 </button>
-                <div id="otpContainer" class="hidden space-y-4">
-                    <hr>
-                    <div>
-                        <label for="otpInput" class="block text-sm font-medium text-gray-700 mb-1">បញ្ចូលលេខកូដ (OTP)</label>
-                        <input type="text" id="otpInput" placeholder="ពិនិត្យមើល Email អ្នក" class="w-full p-2 border border-gray-300 rounded-md shadow-sm text-center tracking-[.2em] font-bold">
-                    </div>
-                    <button id="loginBtn" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">ចូលប្រើ</button>
-                </div>
             </div>
-            <div id="loginStatus" class="text-center mt-4 text-sm min-h-[20px]"></div>
+
+            <div id="otp-form" class="hidden mt-4">
+                <p class="text-sm text-gray-500 mb-2">លេខកូដ OTP ត្រូវបានផ្ញើទៅកាន់ <b id="user-email-display"></b>។ សូមពិនិត្យប្រអប់សំបុត្រ។</p>
+                <input type="text" id="otp-input" placeholder="បញ្ចូលលេខកូដ OTP 6 ខ្ទង់" class="w-full p-3 border border-gray-300 rounded-md text-center tracking-[8px] text-lg font-koulen" maxlength="6">
+                <button id="verify-otp-btn" class="w-full mt-4 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition duration-300">
+                    បញ្ជាក់ និងចូលប្រើ
+                </button>
+            </div>
+             <div id="login-status" class="mt-4 text-sm h-5"></div>
         </div>
     </div>
 
-    <!-- Main Application Container (Initially Hidden) -->
-    <div id="appContainer" class="hidden">
-        <div class="container mx-auto p-4 md:p-6">
-            <header class="bg-white shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
-                <h1 class="text-2xl md:text-3xl font-koulen text-blue-600 text-center flex-grow">ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យបុគ្គលិក (ឆ្លាតវៃ)</h1>
-                <div id="userInfoContainer" class="hidden items-center gap-3">
-                    <span id="loggedInUserName" class="text-sm font-medium text-gray-700 hidden sm:inline"></span>
-                    <button id="logoutBtn" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300" title="ចាកចេញពីប្រព័ន្ធ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16">
-                          <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
-                          <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
-                        </svg>
-                    </button>
-                </div>
-            </header>
+    <!-- Main Content (Hidden by default) -->
+    <div id="main-content" class="container mx-auto p-4 md:p-6 hidden">
+        <header class="bg-white shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
+            <h1 class="text-2xl md:text-3xl font-koulen text-blue-600 text-center flex-grow">ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យបុគ្គលិក (ឆ្លាតវៃ)</h1>
+            <div class="flex items-center gap-2">
+                 <span id="logged-in-user" class="text-sm text-gray-600 hidden md:inline"></span>
+                 <button id="logout-btn" title="ចាកចេញពីប្រព័ន្ធ" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                </button>
+            </div>
+        </header>
 
-            <main class="bg-white shadow-md rounded-lg p-4">
-                <!-- New Button for Incomplete Data -->
-                <div class="mb-4">
-                     <button id="incompleteDataBtn" class="w-full bg-orange-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-600 transition duration-300 flex items-center justify-center gap-2">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16"><path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/><path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/></svg>
-                         <span>បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)</span>
-                    </button>
-                </div>
-                  
-                <!-- Summary and Filters Combined Section -->
-                <div class="mb-4 space-y-4">
-                    <!-- Summary Stats (More Compact) -->
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
-                        <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                            <h3 class="text-sm font-bold text-blue-800">បុគ្គលិកសរុប</h3>
-                            <p id="total-employees" class="text-2xl font-koulen text-blue-600">0</p>
-                        </div>
-                        <div class="bg-pink-50 border border-pink-200 p-3 rounded-lg">
-                            <h3 class="text-sm font-bold text-pink-800">បុគ្គលិកស្ត្រី</h3>
-                            <p id="female-employees" class="text-2xl font-koulen text-pink-600">0</p>
-                        </div>
-                         <div class="bg-green-50 border border-green-200 p-3 rounded-lg col-span-2 md:col-span-1">
-                            <h3 class="text-sm font-bold text-green-800">បុគ្គលិកបុរស</h3>
-                            <p id="male-employees" class="text-2xl font-koulen text-green-600">0</p>
-                        </div>
+        <main class="bg-white shadow-md rounded-lg p-4">
+            <!-- New Button for Incomplete Data -->
+            <div class="mb-4">
+                 <button id="incompleteDataBtn" class="w-full bg-orange-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-600 transition duration-300 flex items-center justify-center gap-2">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16"><path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/><path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/></svg>
+                    <span>បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)</span>
+                </button>
+            </div>
+            
+            <!-- Summary and Filters Combined Section -->
+            <div class="mb-4 space-y-4">
+                <!-- Summary Stats (More Compact) -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
+                    <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                        <h3 class="text-sm font-bold text-blue-800">បុគ្គលិកសរុប</h3>
+                        <p id="total-employees" class="text-2xl font-koulen text-blue-600">0</p>
                     </div>
-
-                    <!-- Filter Controls (More Compact) -->
-                    <div class="flex flex-wrap items-end gap-4 p-3 bg-gray-50 rounded-lg border">
-                        <div id="dateFilterWrapper" class="flex-grow min-w-[180px]">
-                            <label for="dateFilter" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើសកាលបរិច្ឆេទ:</label>
-                            <input type="date" id="dateFilter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                         <div class="flex-grow min-w-[200px]">
-                            <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">ស្វែងរកទិន្នន័យ:</label>
-                            <input type="text" id="searchInput" placeholder="វាយបញ្ចូលឈ្មោះ, ថ្នាក់, អត្តលេខ..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                        </div>
-                        <div>
-                            <button id="updateDataBtn" class="w-full bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center gap-2" disabled>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
-                                <span id="save-text">រក្សាទុក</span>
-                            </button>
-                        </div>
+                    <div class="bg-pink-50 border border-pink-200 p-3 rounded-lg">
+                        <h3 class="text-sm font-bold text-pink-800">បុគ្គលិកស្ត្រី</h3>
+                        <p id="female-employees" class="text-2xl font-koulen text-pink-600">0</p>
+                    </div>
+                     <div class="bg-green-50 border border-green-200 p-3 rounded-lg col-span-2 md:col-span-1">
+                        <h3 class="text-sm font-bold text-green-800">បុគ្គលិកបុរស</h3>
+                        <p id="male-employees" class="text-2xl font-koulen text-green-600">0</p>
                     </div>
                 </div>
 
-                <div id="status" class="text-center my-4"></div>
-                <div id="loader" class="hidden flex justify-center items-center my-8"><div class="loader"></div></div>
-
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white border border-gray-200">
-                        <thead class="bg-gray-200">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="0">ក្រុម</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="1">ថ្នាក់</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="2">ផ្នែកការងារ</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="3">ឈ្មោះ</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="4">ភេទ</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="5">អត្តលេខ</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="6">កាលបរិច្ឆេទ</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">កាលវិភាគ</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចូល</th>
-                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចេញ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataTableBody" class="divide-y divide-gray-200"></tbody>
-                    </table>
+                <!-- Filter Controls (More Compact) -->
+                <div class="flex flex-wrap items-end gap-4 p-3 bg-gray-50 rounded-lg border">
+                    <div id="dateFilterWrapper" class="flex-grow min-w-[180px]">
+                        <label for="dateFilter" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើសកាលបរិច្ឆេទ:</label>
+                        <input type="date" id="dateFilter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                     <div class="flex-grow min-w-[200px]">
+                        <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">ស្វែងរកទិន្នន័យ:</label>
+                        <input type="text" id="searchInput" placeholder="វាយបញ្ចូលឈ្មោះ, ថ្នាក់, អត្តលេខ..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <button id="updateDataBtn" class="w-full bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center gap-2" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
+                            <span id="save-text">រក្សាទុក</span>
+                        </button>
+                    </div>
                 </div>
-            </main>
-        </div>
+            </div>
+
+            <div id="status" class="text-center my-4"></div>
+            <div id="loader" class="hidden flex justify-center items-center my-8"><div class="loader"></div></div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="0">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="1">ក្រុម</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="2">ថ្នាក់</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="3">ផ្នែកការងារ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="4">ឈ្មោះ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="5">ភេទ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="6">អត្តលេខ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="7">កាលបរិច្ឆេទ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="8">កាលវិភាគ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចូល</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចេញ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </main>
     </div>
 
     <script>
         // ===================================================================================
         // !!! សំខាន់ !!! សូមដាក់ Web App URL ពី Google Apps Script របស់អ្នកនៅទីនេះ
         // ===================================================================================
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXxZ6HAarjfMp8Kh-XpP2GoP6XFZf3cpTyDWJr-uNGJst-hPoNftzzfHtd9B2KQszGmA/exec'; // <--- ត្រួតពិនិត្យថា URL នេះត្រឹមត្រូវ
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXxZ6HAarjfMp8Kh-XpP2GoP6XFZf3cpTyDWJr-uNGJst-hPoNftzzfHtd9B2KQszGmA/exec'; // <--- ដាក់ Web App URL របស់អ្នកនៅទីនេះ
 
-        // --- DOM Elements ---
-        const loginOverlay = document.getElementById('loginOverlay');
-        const appContainer = document.getElementById('appContainer');
-        const userSelect = document.getElementById('userSelect');
-        const sendOtpBtn = document.getElementById('sendOtpBtn');
-        const otpContainer = document.getElementById('otpContainer');
-        const otpInput = document.getElementById('otpInput');
-        const loginBtn = document.getElementById('loginBtn');
-        const loginStatus = document.getElementById('loginStatus');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const loggedInUserName = document.getElementById('loggedInUserName');
-        const userInfoContainer = document.getElementById('userInfoContainer');
+        // --- USER CONFIGURATION ---
+        const USERS = {
+            'bonchantha43@gmail.com': 'ប៊ន ចន្ថា',
+            'chhanonlork87@gmail.com': 'ឡោក ឆាណុន',
+            'roeunsreyneth2026@gmail.com': 'រឿន ស្រណែត',
+            'thavry525354@gmail.com': 'ប៉ី ថាវរី',
+            'chanthaihin168@gmail.com': 'ហឹន ចាន់ថៃ'
+        };
 
+        // --- DOM ELEMENTS ---
+        const loginScreen = document.getElementById('login-screen');
+        const mainContent = document.getElementById('main-content');
+        const loginForm = document.getElementById('login-form');
+        const otpForm = document.getElementById('otp-form');
+        const userSelect = document.getElementById('user-select');
+        const sendOtpBtn = document.getElementById('send-otp-btn');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const otpInput = document.getElementById('otp-input');
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const loginStatus = document.getElementById('login-status');
+        const logoutBtn = document.getElementById('logout-btn');
+        const loggedInUserSpan = document.getElementById('logged-in-user');
+        
         const dateFilter = document.getElementById('dateFilter');
         const dateFilterWrapper = document.getElementById('dateFilterWrapper');
         const updateDataBtn = document.getElementById('updateDataBtn');
@@ -194,20 +199,13 @@
         const searchInput = document.getElementById('searchInput');
         const incompleteDataBtn = document.getElementById('incompleteDataBtn');
         
-        // --- State Variables ---
+        // --- APP STATE ---
         let allData = [];
         let filteredData = [];
         let sortConfig = { index: null, direction: 'asc' };
         let currentMode = 'date'; // 'date' or 'incomplete'
 
-        // --- User Data for Login ---
-        const users = [
-            { name: 'ប៊ន ចន្ថា', email: 'bonchantha43@gmail.com' },
-            { name: 'ឡោក ឆាណុន', email: 'chhanonlork87@gmail.com' },
-            { name: 'រឿន ស្រណែត', email: 'roeunsreyneth2026@gmail.com' }
-        ];
-
-        // --- Helper Functions ---
+        // --- HELPER FUNCTIONS ---
         function showLoader() { loader.classList.remove('hidden'); statusDiv.textContent = ''; dataTableBody.innerHTML = ''; }
         function hideLoader() { loader.classList.add('hidden'); }
         function showStatus(message, isError = false) {
@@ -216,15 +214,13 @@
         }
         function showLoginStatus(message, isError = false) {
             loginStatus.textContent = message;
-            loginStatus.className = isError ? 'text-center mt-4 text-sm min-h-[20px] text-red-600' : 'text-center mt-4 text-sm min-h-[20px] text-green-600';
+            loginStatus.className = isError ? 'mt-4 text-sm h-5 text-red-600' : 'mt-4 text-sm h-5 text-green-600';
         }
         
         function validateWebAppUrl() {
-            if (!WEB_APP_URL || WEB_APP_URL.length < 50 || WEB_APP_URL.includes('AKfy...')) {
-                const msg = '!!! សូមបញ្ជាក់៖ អ្នកត្រូវដាក់ Web App URL ដែលបាន Deploy ពី Google Apps Script របស់អ្នក នៅក្នុងកូដ JavaScript ជាមុនសិន ទើបកម្មវិធីនេះអាចដំណើរការបាន។';
-                showLoginStatus(msg, true);
-                showStatus(msg, true);
-                return false;
+            if (!WEB_APP_URL || WEB_APP_URL.length < 50 || WEB_APP_URL.includes("YOUR_WEB_APP_URL")) {
+                 showStatus('!!! សូមបញ្ជាក់៖ អ្នកត្រូវដាក់ Web App URL ដែលបាន Deploy ពី Google Apps Script របស់អ្នក នៅក្នុងកូដ JavaScript ជាមុនសិន ទើបកម្មវិធីនេះអាចដំណើរការបាន។', true);
+                 return false;
             }
             return true;
         }
@@ -232,7 +228,7 @@
         function formatDateForDisplay(dateStr) {
             if (!dateStr) return '';
             const date = new Date(dateStr);
-             if (isNaN(date.getTime())) return dateStr; 
+             if (isNaN(date.getTime()) || date.getFullYear() < 1971) return ''; 
             const options = { day: '2-digit', month: 'short', year: 'numeric' };
             return date.toLocaleDateString('en-GB', options).replace(/ /g, '-');
         }
@@ -242,109 +238,14 @@
             let month = '' + (d.getMonth() + 1);
             let day = '' + d.getDate();
             const year = d.getFullYear();
+
             if (month.length < 2) month = '0' + month;
             if (day.length < 2) day = '0' + day;
+
             return [year, month, day].join('-');
         }
         
-        // --- Login & Session Logic ---
-
-        function showApp(userEmail) {
-            const user = users.find(u => u.email === userEmail);
-            loginOverlay.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            
-            if (user) {
-                loggedInUserName.textContent = user.name;
-                userInfoContainer.classList.remove('hidden');
-                userInfoContainer.classList.add('flex');
-            }
-
-            showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
-        }
-
-        function populateUserSelect() {
-            users.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.email;
-                option.textContent = user.name;
-                userSelect.appendChild(option);
-            });
-        }
-
-        async function handleSendOtp() {
-            const selectedEmail = userSelect.value;
-            if (!selectedEmail) {
-                showLoginStatus('សូមជ្រើសរើសគណនីរបស់អ្នកជាមុនសិន។', true);
-                return;
-            }
-            if (!validateWebAppUrl()) return;
-
-            sendOtpBtn.disabled = true;
-            sendOtpBtn.querySelector('span').textContent = 'កំពុងផ្ញើ...';
-            showLoginStatus('កំពុងផ្ញើ OTP សូមរង់ចាំ...', false);
-
-            try {
-                const response = await fetch(`${WEB_APP_URL}?action=sendOtp&email=${encodeURIComponent(selectedEmail)}`);
-                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
-                const result = await response.json();
-                if (result.status === 'success') {
-                    showLoginStatus(`លេខកូដ OTP ត្រូវបានផ្ញើទៅកាន់ ${selectedEmail}`, false);
-                    otpContainer.classList.remove('hidden');
-                    loginBtn.classList.remove('hidden');
-                } else {
-                    throw new Error(result.error || 'Unknown error sending OTP.');
-                }
-            } catch (error) {
-                console.error('Error sending OTP:', error);
-                showLoginStatus(`មានបញ្ហាក្នុងការផ្ញើ OTP: ${error.message}`, true);
-            } finally {
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.querySelector('span').textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
-            }
-        }
-
-        async function handleLogin() {
-            const otp = otpInput.value.trim();
-            const email = userSelect.value;
-            if (!otp) {
-                showLoginStatus('សូមបញ្ចូលលេខកូដ OTP។', true);
-                return;
-            }
-             if (!validateWebAppUrl()) return;
-
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'កំពុងផ្ទៀងផ្ទាត់...';
-            showLoginStatus('កំពុងផ្ទៀងផ្ទាត់ OTP...', false);
-            
-            try {
-                const response = await fetch(`${WEB_APP_URL}?action=verifyOtp&email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`);
-                 if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    showLoginStatus('ការចូលប្រើប្រាស់បានជោគជ័យ!', false);
-                    localStorage.setItem('loggedInUserEmail', email); // <-- រក្សាទុក Session
-                    setTimeout(() => {
-                        showApp(email);
-                    }, 500);
-                } else {
-                     throw new Error(result.error || 'OTP មិនត្រឹមត្រូវ។');
-                }
-            } catch (error) {
-                 console.error('Error verifying OTP:', error);
-                showLoginStatus(error.message, true);
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'ចូលប្រើ';
-            }
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('loggedInUserEmail'); // <-- លុប Session
-            location.reload(); // <-- ផ្ទុកទំព័រឡើងវិញ
-        }
-        
-        // --- Main App Data Functions ---
+        // --- DATA HANDLING FUNCTIONS ---
         async function fetchData() {
             if (!validateWebAppUrl() || currentMode !== 'date') return;
             showLoader();
@@ -356,20 +257,21 @@
                 showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ។', true);
                 return;
             }
+            
             const apiDate = formatDateForAPI(selectedDate);
 
             try {
                 const response = await fetch(`${WEB_APP_URL}?action=getData&date=${apiDate}`);
                 if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
+                 if (data.error) throw new Error(data.error);
 
                 allData = data;
                 applyFiltersAndRender();
                 if (data.length === 0) {
                     showStatus(`រកមិនឃើញទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)} ទេ។`);
                 } else {
-                    statusDiv.innerHTML = '';
+                     showStatus(`រកឃើញ ${data.length} ទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)}`);
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -390,7 +292,7 @@
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
 
-                data.sort((a, b) => (new Date(b.data[6])) - (new Date(a.data[6])));
+                data.sort((a, b) => (new Date(b.data[7])) - (new Date(a.data[7]))); // Sort by date (column H)
                 allData = data;
                 applyFiltersAndRender();
 
@@ -411,13 +313,11 @@
             let dataToRender = allData;
             const searchTerm = searchInput.value.toLowerCase();
             if(searchTerm){
-                 dataToRender = dataToRender.filter(item => {
-                    const columnsToSearch = [0, 1, 2, 3, 4, 5, 6];
-                    return columnsToSearch.some(i => 
-                        item.data[i] && item.data[i].toString().toLowerCase().includes(searchTerm)
-                    );
-                });
+                 dataToRender = dataToRender.filter(item => 
+                    item.data.some(cell => cell && cell.toString().toLowerCase().includes(searchTerm))
+                );
             }
+            
             filteredData = dataToRender;
             applySorting();
             renderTable(filteredData);
@@ -426,13 +326,12 @@
         
         function applySorting() {
             if (sortConfig.index === null) return;
-            if (currentMode === 'incomplete' && sortConfig.index === 6) return;
-
+            
             filteredData.sort((a, b) => {
                 const valA = a.data[sortConfig.index] || '';
                 const valB = b.data[sortConfig.index] || '';
                 
-                if(sortConfig.index === 6){
+                if(sortConfig.index === 7){ // Sorting for Date column (H)
                     const dateA = new Date(valA).getTime() || 0;
                     const dateB = new Date(valB).getTime() || 0;
                     return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
@@ -450,23 +349,18 @@
 
             if (currentMode === 'incomplete') {
                 const groupedData = data.reduce((acc, item) => {
-                    const date = formatDateForDisplay(item.data[6]) || 'មិនមានកាលបរិច្ឆេទ';
-                    if (!acc[date]) {
-                        acc[date] = [];
-                    }
+                    const date = formatDateForDisplay(item.data[7]) || 'មិនមានកាលបរិច្ឆេទ';
+                    if (!acc[date]) acc[date] = [];
                     acc[date].push(item);
                     return acc;
                 }, {});
 
                 for (const date in groupedData) {
                     const itemsForDate = groupedData[date];
-                    const count = itemsForDate.length;
-                    
                     const groupRow = document.createElement('tr');
                     groupRow.className = 'bg-yellow-300 font-bold';
-                    groupRow.innerHTML = `<td colspan="10" class="px-4 py-2 text-gray-800">កាលបរិច្ឆេទ: ${date} (សរុប: ${count})</td>`;
+                    groupRow.innerHTML = `<td colspan="11" class="px-4 py-2 text-gray-800">កាលបរិច្ឆេទ: ${date} (សរុប: ${itemsForDate.length})</td>`;
                     dataTableBody.appendChild(groupRow);
-
                     itemsForDate.forEach(item => renderRow(item));
                 }
             } else {
@@ -475,33 +369,34 @@
         }
         
         function renderRow(item) {
-            const isITSupport = (item.data[2] || '').trim().toLowerCase() === 'it support';
+            const isITSupport = (item.data[3] || '').trim().toLowerCase() === 'it support';
             const editableAttribute = isITSupport ? '' : 'contenteditable="true"';
             const nonEditableClass = isITSupport ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : '';
-            const currentDate = formatDateForDisplay(item.data[6]);
             
             const row = document.createElement('tr');
             row.className = 'hover:bg-gray-50 transition-colors';
             row.dataset.rowIndex = item.rowIndex; 
 
+            // ** កែតម្រូវ Index នៃទិន្នន័យទាំងអស់នៅទីនេះ **
             row.innerHTML = `
-                <td class="px-4 py-2 border-b text-sm">${item.data[0] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm">${currentDate}</td>
-                <td class="px-4 py-2 border-b text-sm">${item.data[7] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${item.data[8] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${item.data[9] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm font-bold">${item.data[0] || ''}</td>  <!-- លរ# (A) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>  <!-- ក្រុម (B) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>  <!-- ថ្នាក់ (C) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>  <!-- ផ្នែកការងារ (D) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>  <!-- ឈ្មោះ (E) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>  <!-- ភេទ (F) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[6] || ''}</td>  <!-- អត្តលេខ (G) -->
+                <td class="px-4 py-2 border-b text-sm">${formatDateForDisplay(item.data[7])}</td> <!-- កាលបរិច្ឆេទ (H) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[8] || ''}</td>  <!-- កាលវិភាគ (I) -->
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${item.data[9] || ''}</td>  <!-- ម៉ោងចូល (J) -->
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${item.data[10] || ''}</td> <!-- ម៉ោងចេញ (K) -->
             `;
             dataTableBody.appendChild(row);
         }
 
         function updateSummary(data) {
             const total = data.length;
-            const females = data.filter(item => item.data[4] === 'ស្រី').length;
+            const females = data.filter(item => item.data[5] === 'ស្រី').length; // Gender is in column F (index 5)
             const males = total - females;
             document.getElementById('total-employees').textContent = total;
             document.getElementById('female-employees').textContent = females;
@@ -534,8 +429,8 @@
             }
             const updates = Array.from(editedRows).map(row => ({
                 rowIndex: row.dataset.rowIndex,
-                checkIn: row.cells[8].textContent,
-                checkOut: row.cells[9].textContent
+                checkIn: row.cells[9].textContent,
+                checkOut: row.cells[10].textContent
             }));
 
             updateDataBtn.disabled = true;
@@ -561,24 +456,125 @@
                         }
                     }
                     editedRows.forEach(row => row.classList.remove('edited'));
+
                 } else { throw new Error(result.message || 'Unknown error'); }
             } catch (error) {
                 showStatus(`មានបញ្ហាក្នុងការរក្សាទុក: ${error.message}`, true);
             } finally {
-                updateDataBtn.disabled = false;
-                saveText.textContent = 'រក្សាទុក';
+                 updateDataBtn.disabled = document.querySelectorAll('tr.edited').length === 0;
+                 saveText.textContent = 'រក្សាទុក';
             }
         }
         
+        // --- LOGIN/AUTH FUNCTIONS ---
+        function populateUserDropdown() {
+            for (const email in USERS) {
+                const option = document.createElement('option');
+                option.value = email;
+                option.textContent = USERS[email];
+                userSelect.appendChild(option);
+            }
+        }
+
+        async function handleSendOtp() {
+            const selectedEmail = userSelect.value;
+            if (!selectedEmail) {
+                showLoginStatus('សូមជ្រើសរើសឈ្មោះរបស់អ្នកជាមុនសិន', true);
+                return;
+            }
+
+            sendOtpBtn.disabled = true;
+            sendOtpBtn.querySelector('span').textContent = 'កំពុងផ្ញើ...';
+            showLoginStatus('');
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=sendOtp&email=${selectedEmail}`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    loginForm.classList.add('hidden');
+                    otpForm.classList.remove('hidden');
+                    userEmailDisplay.textContent = selectedEmail;
+                    showLoginStatus('លេខកូដត្រូវបានផ្ញើដោយជោគជ័យ', false);
+                    otpInput.focus();
+                } else {
+                    throw new Error(result.error || 'Unknown error sending OTP.');
+                }
+            } catch (error) {
+                console.error('OTP Send Error:', error);
+                showLoginStatus(`មានបញ្ហាក្នុងការផ្ញើ OTP: ${error.message}`, true);
+            } finally {
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.querySelector('span').textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
+            }
+        }
+
+        async function handleVerifyOtp() {
+            const selectedEmail = userSelect.value;
+            const otp = otpInput.value;
+            if (otp.length !== 6) {
+                showLoginStatus('សូមបញ្ចូលលេខកូដ OTP 6 ខ្ទង់', true);
+                return;
+            }
+            
+            verifyOtpBtn.disabled = true;
+            verifyOtpBtn.textContent = 'កំពុងផ្ទៀងផ្ទាត់...';
+            showLoginStatus('');
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=verifyOtp&email=${selectedEmail}&otp=${otp}`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Login successful
+                    const loggedInUser = { email: selectedEmail, name: USERS[selectedEmail] };
+                    localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
+                    showMainContent(loggedInUser);
+                } else {
+                     throw new Error(result.error || 'Unknown error verifying OTP.');
+                }
+            } catch (error) {
+                 console.error('OTP Verify Error:', error);
+                 showLoginStatus(`ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ: ${error.message}`, true);
+            } finally {
+                verifyOtpBtn.disabled = false;
+                verifyOtpBtn.textContent = 'បញ្ជាក់ និងចូលប្រើ';
+            }
+        }
+        
+        function handleLogout() {
+            localStorage.removeItem('loggedInUser');
+            loginScreen.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            otpInput.value = '';
+            userSelect.value = '';
+            loginForm.classList.remove('hidden');
+            otpForm.classList.add('hidden');
+            showLoginStatus('');
+        }
+        
+        function showMainContent(user) {
+            loginScreen.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+            loggedInUserSpan.textContent = user.name;
+            showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
+            validateWebAppUrl(); 
+        }
+
+        function checkLoginSession() {
+            const storedUser = localStorage.getItem('loggedInUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.email && user.name) {
+                        showMainContent(user);
+                    }
+                } catch (e) {
+                    // Invalid JSON, treat as not logged in
+                    localStorage.removeItem('loggedInUser');
+                }
+            }
+        }
+
         // --- EVENT LISTENERS ---
-        sendOtpBtn.addEventListener('click', handleSendOtp);
-        loginBtn.addEventListener('click', handleLogin);
-        logoutBtn.addEventListener('click', handleLogout);
-        otpInput.addEventListener('keyup', (e) => {
-             if (e.key === 'Enter') handleLogin();
-        });
-
-
         dataTableBody.addEventListener('input', e => {
             if (e.target.isContentEditable) {
                 e.target.closest('tr').classList.add('edited');
@@ -589,6 +585,9 @@
         dateFilter.addEventListener('change', fetchData);
         searchInput.addEventListener('input', applyFiltersAndRender);
         updateDataBtn.addEventListener('click', updateData);
+        sendOtpBtn.addEventListener('click', handleSendOtp);
+        verifyOtpBtn.addEventListener('click', handleVerifyOtp);
+        logoutBtn.addEventListener('click', handleLogout);
         
         incompleteDataBtn.addEventListener('click', () => {
             if (currentMode === 'date') {
@@ -629,15 +628,10 @@
             });
         });
         
+        // --- INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
-            const loggedInUserEmail = localStorage.getItem('loggedInUserEmail');
-            if (loggedInUserEmail) {
-                showApp(loggedInUserEmail);
-            } else {
-                loginOverlay.classList.remove('hidden');
-            }
-            populateUserSelect();
-            validateWebAppUrl(); 
+            populateUserDropdown();
+            checkLoginSession();
         });
     </script>
 </body>
