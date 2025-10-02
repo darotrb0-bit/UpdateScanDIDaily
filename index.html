@@ -3,381 +3,753 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Photo Capture App (កម្មវិធីថតរូបសិស្ស)</title>
+    <title>កម្មវិធីគ្រប់គ្រងទិន្នន័យ Google Sheet (ឆ្លាតវៃ)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Koulen&family=Moul&family=Noto+Sans+Khmer:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Tom Select CSS for smart dropdown -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <style>
         body {
-            font-family: 'Noto Sans Khmer', 'Koulen', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Noto Sans Khmer', sans-serif;
+            background-color: #f0f2f5;
         }
-        .moul-font {
-            font-family: 'Moul', cursive;
+        .font-koulen {
+            font-family: 'Koulen', cursive;
         }
-        /* Custom scrollbar for better look */
-        ::-webkit-scrollbar {
-            width: 8px;
+        [contenteditable="true"] {
+            background-color: #fef9c3; /* yellow-100 */
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+        [contenteditable="true"]:focus {
+            outline: 2px solid #3b82f6; /* blue-500 */
+            background-color: #ffffff;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
+        .edited { background-color: #dbeafe !important; }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        video {
-            transform: scaleX(-1); /* Mirror effect for front camera */
+        .sortable-header { cursor: pointer; user-select: none; }
+        .sortable-header:hover { background-color: #e5e7eb; }
+        .sort-icon {
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            margin-left: 8px;
+            opacity: 0.4;
+            transition: opacity 0.2s;
         }
-        /* Tom Select custom styling */
-        .ts-control {
-            padding: 0.75rem !important;
-            border-radius: 0.5rem !important;
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        .sortable-header.sorted .sort-icon { opacity: 1; }
+        #detail-modal .modal-content {
+            animation: slide-up 0.3s ease-out;
         }
-        .ts-dropdown {
-            border-radius: 0.5rem !important;
+        @keyframes slide-up {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
-<body class="bg-gray-200">
+<body class="text-gray-800">
 
-    <div class="flex flex-col lg:flex-row h-screen overflow-hidden">
-        
-        <!-- Control Panel (Left Side / Full screen on mobile) -->
-        <div id="selection-panel" class="w-full lg:w-1/3 bg-white p-6 shadow-lg flex flex-col h-full overflow-y-auto">
-            <h1 class="text-3xl font-bold text-center text-blue-800 mb-6 moul-font">កម្មវិធីថតរូបសិស្ស</h1>
-
-            <!-- Student Selection -->
-            <div class="space-y-4 mb-6">
-                <div>
-                    <label for="student-search-select" class="block text-md font-bold text-gray-700 mb-2">ស្វែងរក (អត្តលេខ ឬ ឈ្មោះ)</label>
-                    <select id="student-search-select" placeholder="វាយបញ្ចូលអត្តលេខ ឬ ឈ្មោះដើម្បីស្វែងរក..."></select>
-                </div>
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm text-center">
+            <h2 class="text-2xl font-koulen text-blue-600 mb-2">សូមចូលប្រើប្រព័ន្ធ</h2>
+            <p class="text-gray-600 mb-6">ជ្រើសរើសគណនីរបស់អ្នកដើម្បីបន្ត</p>
+            
+            <div id="login-form">
+                <select id="user-select" class="w-full p-3 border border-gray-300 rounded-md mb-4 text-center">
+                    <option value="">-- ជ្រើសរើសឈ្មោះ --</option>
+                </select>
+                <button id="send-otp-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>
+                    <span>ផ្ញើលេខកូដ (OTP) ម្ដងទៀត</span>
+                </button>
             </div>
 
-            <!-- Student Info Display -->
-            <div id="student-info-card" class="bg-blue-50 p-5 rounded-lg border border-blue-200 hidden">
-                <h2 class="text-2xl font-bold text-blue-700 mb-4 moul-font">ព័ត៌មានសិស្ស</h2>
-                <div class="space-y-3 text-lg">
-                    <p><strong>អត្តលេខ:</strong> <span id="info-id" class="font-mono text-gray-800"></span></p>
-                    <p><strong>ឈ្មោះ:</strong> <span id="info-name" class="text-gray-800"></span></p>
-                    <p><strong>ថ្នាក់:</strong> <span id="info-class" class="font-mono text-red-600 font-bold"></span></p>
-                </div>
+            <div id="otp-form" class="hidden mt-4">
+                <p class="text-sm text-gray-500 mb-2">លេខកូដ OTP ត្រូវបានផ្ញើទៅកាន់ <b id="user-email-display"></b>។ សូមពិនិត្យប្រអប់សំបុត្រ។</p>
+                <input type="text" id="otp-input" placeholder="បញ្ចូលលេខកូដ OTP 6 ខ្ទង់" class="w-full p-3 border border-gray-300 rounded-md text-center tracking-[8px] text-lg font-koulen" maxlength="6">
+                <button id="verify-otp-btn" class="w-full mt-4 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition duration-300">
+                    បញ្ជាក់ និងចូលប្រើ
+                </button>
+            </div>
+             <div id="login-status" class="mt-4 text-sm h-5"></div>
+        </div>
+    </div>
+
+    <!-- Main Content (Hidden by default) -->
+    <div id="main-content" class="container mx-auto p-4 md:p-6 hidden">
+        <header class="bg-white shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
+            <h1 class="text-2xl md:text-3xl font-koulen text-blue-600 text-center flex-grow">ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យបុគ្គលិក (ឆ្លាតវៃ)</h1>
+            <div class="flex items-center gap-2">
+                 <span id="logged-in-user" class="text-sm text-gray-600 hidden md:inline"></span>
+                 <button id="logout-btn" title="ចាកចេញពីប្រព័ន្ធ" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <main class="bg-white shadow-md rounded-lg p-4">
+            <!-- New Button for Incomplete Data -->
+            <div class="mb-4">
+                 <button id="incompleteDataBtn" class="w-full bg-orange-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-600 transition duration-300 flex items-center justify-center gap-2">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16"><path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/><path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/></svg>
+                    <span>បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)</span>
+                </button>
             </div>
             
-             <!-- Message Box -->
-            <div id="message-box" class="mt-auto pt-6"></div>
+            <!-- Summary and Filters Combined Section -->
+            <div class="mb-4 space-y-4">
+                <!-- Summary Stats (More Compact) -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
+                    <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                        <h3 class="text-sm font-bold text-blue-800">បុគ្គលិកសរុប</h3>
+                        <p id="total-employees" class="text-2xl font-koulen text-blue-600">0</p>
+                    </div>
+                    <div class="bg-pink-50 border border-pink-200 p-3 rounded-lg">
+                        <h3 class="text-sm font-bold text-pink-800">បុគ្គលិកស្ត្រី</h3>
+                        <p id="female-employees" class="text-2xl font-koulen text-pink-600">0</p>
+                    </div>
+                     <div class="bg-green-50 border border-green-200 p-3 rounded-lg col-span-2 md:col-span-1">
+                        <h3 class="text-sm font-bold text-green-800">បុគ្គលិកបុរស</h3>
+                        <p id="male-employees" class="text-2xl font-koulen text-green-600">0</p>
+                    </div>
+                </div>
 
-        </div>
-
-        <!-- Camera View (Right Side / Full screen on mobile) -->
-        <div id="camera-panel" class="w-full lg:w-2/3 bg-gray-800 flex-col items-center justify-center p-4 relative h-full hidden lg:flex">
-            <!-- Back Button (Mobile only) -->
-            <button id="back-btn" title="ត្រឡប់ក្រោយ" class="absolute top-4 left-4 z-20 p-3 bg-white/20 rounded-full hover:bg-white/40 transition lg:hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-            </button>
-            <div id="camera-container" class="w-auto h-[85%] max-h-[800px] aspect-[9/16] bg-black rounded-lg overflow-hidden relative shadow-2xl">
-                <video id="video" class="w-full h-full object-cover" playsinline autoplay muted></video>
-                <canvas id="canvas" class="hidden"></canvas>
-                <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-white bg-gray-900 z-10">
-                    <svg class="w-16 h-16 text-gray-500 mb-4 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.776 48.776 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" /></svg>
-                    <p id="camera-status" class="text-lg">កំពុងចាប់ផ្តើមដំណើរការកាមេរ៉ា...</p>
+                <!-- Filter Controls (More Compact) -->
+                <div class="flex flex-wrap items-end gap-4 p-3 bg-gray-50 rounded-lg border">
+                    <div id="dateFilterWrapper" class="flex-grow min-w-[180px]">
+                        <label for="dateFilter" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើសកាលបរិច្ឆេទ:</label>
+                        <input type="date" id="dateFilter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                     <div class="flex-grow min-w-[200px]">
+                        <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">ស្វែងរកទិន្នន័យ:</label>
+                        <input type="text" id="searchInput" placeholder="វាយបញ្ចូលឈ្មោះ, ថ្នាក់, អត្តលេខ..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <button id="updateDataBtn" class="w-full bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center gap-2" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
+                            <span id="save-text">រក្សាទុក</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center justify-center gap-4 mt-4 w-full max-w-md">
-                <button id="capture-btn" class="flex-grow bg-green-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-green-700 transition duration-300 text-xl disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    ថត និងរក្សាទុក
-                </button>
-                 <button id="flip-camera-btn" title="ប្តូរកាមេរ៉ា" class="p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 disabled:bg-gray-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 20h5v-5M20 4h-5v5" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h5v5M9 20H4v-5M15 20h5v-5M9 4H4v5" />
+
+            <div id="status" class="text-center my-4"></div>
+            <div id="loader" class="hidden flex justify-center items-center my-8"><div class="loader"></div></div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="0">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="1">ក្រុម</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="2">ថ្នាក់</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="3">ផ្នែកការងារ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="4">ឈ្មោះ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="5">ភេទ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="6">អត្តលេខ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="7">កាលបរិច្ឆេទ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="8">កាលវិភាគ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចូល</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចេញ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Employee Detail Modal -->
+    <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-40">
+        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="p-5 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="text-xl font-koulen text-blue-700">ព័ត៌មានលម្អិតបុគ្គលិក</h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
                     </svg>
                 </button>
             </div>
+            <div class="p-6 md:flex md:gap-6">
+                <div class="md:w-1/3 mb-4 md:mb-0">
+                    <div id="photo-container" class="w-32 h-32 mx-auto rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-md">
+                        <img id="employee-photo" src="https://placehold.co/128x128/EBF4FF/7F9CF5?text=Loading..." alt="Employee Photo" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                <div class="md:w-2/3 space-y-2 text-gray-700">
+                    <h4 id="modal-name" class="text-2xl font-bold text-gray-800"></h4>
+                    <p><strong class="font-semibold w-24 inline-block">អត្តលេខ:</strong> <span id="modal-id"></span></p>
+                    <p><strong class="font-semibold w-24 inline-block">ផ្នែក:</strong> <span id="modal-department"></span></p>
+                    <p><strong class="font-semibold w-24 inline-block">ភេទ:</strong> <span id="modal-gender"></span></p>
+                    <p><strong class="font-semibold w-24 inline-block">ថ្នាក់:</strong> <span id="modal-class"></span></p>
+                    <p><strong class="font-semibold w-24 inline-block">ក្រុម:</strong> <span id="modal-group"></span></p>
+                </div>
+            </div>
+             <div class="p-6 bg-gray-50 border-t grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div>
+                    <p class="text-sm text-gray-500">កាលបរិច្ឆេទ</p>
+                    <p id="modal-date" class="font-semibold"></p>
+                </div>
+                 <div>
+                    <p class="text-sm text-gray-500">ម៉ោងចូល</p>
+                    <p id="modal-checkin" class="font-semibold text-green-600"></p>
+                </div>
+                 <div>
+                    <p class="text-sm text-gray-500">ម៉ោងចេញ</p>
+                    <p id="modal-checkout" class="font-semibold text-red-600"></p>
+                </div>
+            </div>
         </div>
-
     </div>
-    
-    <!-- Tom Select JS for smart dropdown -->
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+
     <script>
-        // --- Google Sheets API Configuration ---
-        const API_KEY = 'AIzaSyASQ2q3LqxKznkg4MFK1DEeir24FcA8Xnw';
-        const SHEET_ID = '1eRyPoifzyvB4oBmruNyXcoKMKPRqjk6xDD6-bPNW6pc';
-        const RANGE = 'DIList!E9:R';
-        const URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+        // ===================================================================================
+        // !!! សំខាន់ !!! សូមដាក់ Web App URL ពី Google Apps Script របស់អ្នកនៅទីនេះ
+        // ===================================================================================
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXxZ6HAarjfMp8Kh-XpP2GoP6XFZf3cpTyDWJr-uNGJst-hPoNftzzfHtd9B2KQszGmA/exec'; // <--- ដាក់ Web App URL របស់អ្នកនៅទីនេះ
+
+        // --- USER CONFIGURATION ---
+        const USERS = {
+            'darotrb0@gmail.com': 'MMK',
+            'bonchantha43@gmail.com': 'ប៊ន ចន្ថា',
+            'chhanonlork87@gmail.com': 'ឡោក ឆាណុន',
+            'roeunsreyneth2026@gmail.com': 'រឿន ស្រណែត',
+            'phonekh501@gmail.com': 'សយ គឹមសុដានី',
+            'thavry525354@gmail.com': 'ប៉ី ថាវរី',
+            'chanthaihin168@gmail.com': 'ហឹន ចាន់ថៃ'
+        };
+
+        // --- DOM ELEMENTS ---
+        const loginScreen = document.getElementById('login-screen');
+        const mainContent = document.getElementById('main-content');
+        const loginForm = document.getElementById('login-form');
+        const otpForm = document.getElementById('otp-form');
+        const userSelect = document.getElementById('user-select');
+        const sendOtpBtn = document.getElementById('send-otp-btn');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const otpInput = document.getElementById('otp-input');
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const loginStatus = document.getElementById('login-status');
+        const logoutBtn = document.getElementById('logout-btn');
+        const loggedInUserSpan = document.getElementById('logged-in-user');
         
-        // --- DATA SOURCE ---
-        let studentData = [];
-        const folderMapping = { 'DEE1': '1WrWC4f8YmdtvZDnxWGT3Xkj01n5K3m4', 'DEE2': '18mM6ivvbd9dkToDVXc9hY83BBVcCN93M' };
+        const dateFilter = document.getElementById('dateFilter');
+        const dateFilterWrapper = document.getElementById('dateFilterWrapper');
+        const updateDataBtn = document.getElementById('updateDataBtn');
+        const dataTableBody = document.getElementById('dataTableBody');
+        const loader = document.getElementById('loader');
+        const statusDiv = document.getElementById('status');
+        const saveText = document.getElementById('save-text');
+        const searchInput = document.getElementById('searchInput');
+        const incompleteDataBtn = document.getElementById('incompleteDataBtn');
 
-        // --- DOM Elements ---
-        const selectionPanel = document.getElementById('selection-panel');
-        const cameraPanel = document.getElementById('camera-panel');
-        const studentInfoCard = document.getElementById('student-info-card');
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const captureBtn = document.getElementById('capture-btn');
-        const flipCameraBtn = document.getElementById('flip-camera-btn');
-        const backBtn = document.getElementById('back-btn');
-        const messageBox = document.getElementById('message-box');
-        const cameraPlaceholder = document.getElementById('camera-placeholder');
-        const cameraStatus = document.getElementById('camera-status');
-
-        // --- State Management ---
-        let currentStream;
-        let facingMode = 'environment'; // 'environment' for rear, 'user' for front
-        let photographedStudents = JSON.parse(localStorage.getItem('photographedStudents')) || [];
-        let tomSelectInstance;
-
-        // --- Functions ---
-        async function fetchStudentData() {
-            try {
-                const response = await fetch(URL);
-                if (!response.ok) {
-                    throw new Error(`Error fetching data: ${response.statusText}`);
-                }
-                const data = await response.json();
-                const rows = data.values || [];
-                
-                studentData = rows.map(row => ({
-                    id: row[0],    // Column E
-                    name: row[7],  // Column L (index 7 from E)
-                    class: row[13] // Column R (index 13 from E)
-                })).filter(student => student.id && student.name && student.class);
-
-            } catch (error) {
-                console.error('Could not fetch student data:', error);
-                showMessage('error', 'ទាញទិន្នន័យបរាជ័យ', 'សូមពិនិត្យ API Key ឬការតភ្ជាប់អ៊ីនធឺណិត។');
-            }
-        }
+        // Modal Elements
+        const detailModal = document.getElementById('detail-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const employeePhoto = document.getElementById('employee-photo');
         
-        function stopCurrentStream() {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-            }
+        // --- APP STATE ---
+        let allData = [];
+        let filteredData = [];
+        let sortConfig = { index: null, direction: 'asc' };
+        let currentMode = 'date'; // 'date' or 'incomplete'
+
+        // --- HELPER FUNCTIONS ---
+        function showLoader() { loader.classList.remove('hidden'); statusDiv.textContent = ''; dataTableBody.innerHTML = ''; }
+        function hideLoader() { loader.classList.add('hidden'); }
+        function showStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.className = isError ? 'text-center my-4 text-red-600 font-bold' : 'text-center my-4 text-green-600 font-semibold';
         }
-
-        async function startCamera() {
-            // No need to start camera if it's already running.
-            if (currentStream && currentStream.active) return;
-            
-            stopCurrentStream();
-            captureBtn.disabled = true;
-            flipCameraBtn.disabled = true;
-            cameraPlaceholder.classList.remove('hidden');
-
-            const constraints = { video: { facingMode: { ideal: facingMode } }, audio: false };
-
-            try {
-                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = currentStream;
-                video.onloadedmetadata = () => {
-                    const track = currentStream.getVideoTracks()[0];
-                    const settings = track.getSettings();
-                    video.style.transform = settings.facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
-                    cameraPlaceholder.classList.add('hidden');
-                    captureBtn.disabled = false;
-                    flipCameraBtn.disabled = false;
-                };
-            } catch (err) {
-                console.error("Error accessing camera: ", err);
-                cameraStatus.innerHTML = `<span class="text-red-400">បរាជ័យក្នុងការបើកកាមេរ៉ា។<br>សូមអនុញ្ញាតឲ្យប្រើប្រាស់កាមេរ៉ា។</span>`;
-                if (facingMode === 'environment') {
-                    console.log("Retrying with front camera...");
-                    facingMode = 'user';
-                    startCamera();
-                }
-            }
-        }
-
-        function showView(viewName) {
-             // This logic applies only to mobile screens (under lg breakpoint)
-            if (window.innerWidth < 1024) {
-                if (viewName === 'camera') {
-                    selectionPanel.classList.add('hidden');
-                    cameraPanel.classList.remove('hidden');
-                    cameraPanel.classList.add('flex');
-                    startCamera();
-                } else { // 'selection' view
-                    selectionPanel.classList.remove('hidden');
-                    cameraPanel.classList.add('hidden');
-                    stopCurrentStream();
-                }
-            } else {
-                 // On desktop, both views are visible, just ensure camera starts
-                 startCamera();
-            }
+        function showLoginStatus(message, isError = false) {
+            loginStatus.textContent = message;
+            loginStatus.className = isError ? 'mt-4 text-sm h-5 text-red-600' : 'mt-4 text-sm h-5 text-green-600';
         }
         
-        function initializeOrUpdateTomSelect() {
-            if (tomSelectInstance) {
-                tomSelectInstance.destroy();
+        function validateWebAppUrl() {
+            if (!WEB_APP_URL || WEB_APP_URL.length < 50 || WEB_APP_URL.includes("YOUR_WEB_APP_URL")) {
+                 showStatus('!!! សូមបញ្ជាក់៖ អ្នកត្រូវដាក់ Web App URL ដែលបាន Deploy ពី Google Apps Script របស់អ្នក នៅក្នុងកូដ JavaScript ជាមុនសិន ទើបកម្មវិធីនេះអាចដំណើរការបាន។', true);
+                 return false;
             }
-
-            const availableStudents = studentData.filter(s => !photographedStudents.includes(s.id));
-            const selectOptions = availableStudents.map(student => ({
-                value: student.id,
-                text: `${student.id} - ${student.name}`,
-                name: student.name,
-                id: student.id
-            }));
-
-            tomSelectInstance = new TomSelect('#student-search-select', {
-                options: selectOptions,
-                valueField: 'value',
-                labelField: 'text',
-                searchField: ['text'],
-                create: false,
-                placeholder: 'វាយបញ្ចូលអត្តលេខ ឬ ឈ្មោះ...',
-                render: {
-                    option: function(data, escape) {
-                        return `<div>
-                                    <span class="font-bold text-gray-800">${escape(data.id)}</span>
-                                    <span class="text-sm text-gray-600 ml-2">${escape(data.name)}</span>
-                                </div>`;
-                    },
-                    item: function(data, escape) {
-                        return `<div>${escape(data.text)}</div>`;
-                    }
-                },
-                onChange: (value) => {
-                    handleSelection(value);
-                    if (value) {
-                       showView('camera');
-                    }
-                }
-            });
-
-            if (availableStudents.length === 0) {
-                tomSelectInstance.disable();
-                tomSelectInstance.settings.placeholder = '-- មិនមានសិស្សសម្រាប់ថត --';
-                tomSelectInstance.sync();
-            } else {
-                tomSelectInstance.enable();
-            }
+            return true;
         }
 
-        function displayStudentInfo(studentId) {
-             const student = studentData.find(s => s.id === studentId);
-            if (student) {
-                document.getElementById('info-id').textContent = student.id;
-                document.getElementById('info-name').textContent = student.name;
-                document.getElementById('info-class').textContent = student.class;
-                studentInfoCard.classList.remove('hidden');
-                return true;
-            } else {
-                studentInfoCard.classList.add('hidden');
-                return false;
-            }
-        }
-
-        function handleSelection(selectedValue) {
-             if (selectedValue) {
-                displayStudentInfo(selectedValue);
-            } else {
-                studentInfoCard.classList.add('hidden');
-            }
+        function formatDateForDisplay(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+             if (isNaN(date.getTime()) || date.getFullYear() < 1971) return ''; 
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return date.toLocaleDateString('en-GB', options).replace(/ /g, '-');
         }
         
-        function showMessage(type, title, text) {
-            const bgColor = type === 'success' ? 'bg-green-100 border-green-400' : 'bg-red-100 border-red-400';
-            const textColor = type === 'success' ? 'text-green-800' : 'text-red-800';
-            
-            messageBox.innerHTML = `
-                <div class="${bgColor} border-l-4 p-4 rounded-md" role="alert">
-                  <p class="font-bold">${title}</p>
-                  <p>${text}</p>
-                </div>`;
-            
-            setTimeout(() => {
-                messageBox.innerHTML = '';
-            }, 8000);
-        }
+        function formatDateForAPI(date) {
+            const d = new Date(date);
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
 
-        async function captureAndSave() {
-            const studentId = tomSelectInstance.getValue();
-            if (!studentId) {
-                showMessage('error', 'ប្រតិបត្តិការបរាជ័យ', 'សូមជ្រើសរើសសិស្សជាមុនសិន!');
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+
+            return [year, month, day].join('-');
+        }
+        
+        // --- DATA HANDLING FUNCTIONS ---
+        async function fetchData() {
+            if (!validateWebAppUrl() || currentMode !== 'date') return;
+            showLoader();
+            updateDataBtn.disabled = true;
+
+            const selectedDate = dateFilter.value;
+            if (!selectedDate) {
+                hideLoader();
+                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ។', true);
                 return;
             }
-            const student = studentData.find(s => s.id === studentId);
+            
+            const apiDate = formatDateForAPI(selectedDate);
 
-            captureBtn.disabled = true;
-            captureBtn.innerHTML = `
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                កំពុង Upload...`;
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getData&date=${apiDate}`);
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                const data = await response.json();
+                 if (data.error) throw new Error(data.error);
 
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            if (video.style.transform === 'scaleX(-1)') {
-                context.translate(canvas.width, 0);
-                context.scale(-1, 1);
+                allData = data;
+                applyFiltersAndRender();
+                if (data.length === 0) {
+                    showStatus(`រកមិនឃើញទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)} ទេ។`);
+                } else {
+                     showStatus(`រកឃើញ ${data.length} ទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)}`);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យ: ${error.message}`, true);
+            } finally {
+                hideLoader();
             }
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
 
-            setTimeout(() => {
-                const dataUrl = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                const fileName = `${student.class}_${student.id}_${student.name.replace(/\s+/g, '_')}.png`;
-                link.download = fileName;
-                link.href = dataUrl;
-                link.click();
-                
-                photographedStudents.push(student.id);
-                localStorage.setItem('photographedStudents', JSON.stringify(photographedStudents));
-                
-                tomSelectInstance.clear();
-                tomSelectInstance.removeOption(student.id);
-                studentInfoCard.classList.add('hidden');
+        async function fetchIncompleteData() {
+            if (!validateWebAppUrl()) return;
+            showLoader();
+            updateDataBtn.disabled = true;
 
-                const folderId = folderMapping[student.class] || 'N/A';
-                showMessage('success', 'ប្រតិបត្តិការជោគជ័យ!', 
-                    `រូបថតសម្រាប់ <strong>${student.name}</strong> ត្រូវបានទាញយក។ សូមបង្ហោះវាទៅកាន់ Google Drive Folder ID: <strong>${folderId}</strong>`);
-                
-                captureBtn.disabled = false;
-                captureBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    ថត និងរក្សាទុក`;
-                
-                showView('selection');
-            }, 1500);
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getIncompleteData`);
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                data.sort((a, b) => (new Date(b.data[7])) - (new Date(a.data[7]))); // Sort by date (column H)
+                allData = data;
+                applyFiltersAndRender();
+
+                if (data.length === 0) {
+                    showStatus('រកមិនឃើញទិន្នន័យមិនពេញលេញណាមួយទេ។');
+                } else {
+                    showStatus(`រកឃើញ ${data.length} ទិន្នន័យមិនពេញលេញ`, false);
+                }
+            } catch (error) {
+                console.error('Error fetching incomplete data:', error);
+                showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យមិនពេញលេញ: ${error.message}`, true);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function applyFiltersAndRender() {
+            let dataToRender = allData;
+            const searchTerm = searchInput.value.toLowerCase();
+            if(searchTerm){
+                 dataToRender = dataToRender.filter(item => 
+                    item.data.some(cell => cell && cell.toString().toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            filteredData = dataToRender;
+            applySorting();
+            renderTable(filteredData);
+            updateSummary(filteredData);
         }
         
-        // --- Event Listeners ---
-        flipCameraBtn.addEventListener('click', () => {
-            facingMode = facingMode === 'user' ? 'environment' : 'user';
-            startCamera();
-        });
+        function applySorting() {
+            if (sortConfig.index === null) return;
+            
+            filteredData.sort((a, b) => {
+                const valA = a.data[sortConfig.index] || '';
+                const valB = b.data[sortConfig.index] || '';
+                
+                if(sortConfig.index === 7){ // Sorting for Date column (H)
+                    const dateA = new Date(valA).getTime() || 0;
+                    const dateB = new Date(valB).getTime() || 0;
+                    return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+                }
+
+                const comparison = valA.toString().localeCompare(valB.toString(), 'km-KH', { numeric: true });
+                return sortConfig.direction === 'asc' ? comparison : -comparison;
+            });
+            updateSortIcons();
+        }
+
+        function renderTable(data) {
+            dataTableBody.innerHTML = '';
+            if (data.length === 0) return;
+
+            if (currentMode === 'incomplete') {
+                const groupedData = data.reduce((acc, item) => {
+                    const date = formatDateForDisplay(item.data[7]) || 'មិនមានកាលបរិច្ឆេទ';
+                    if (!acc[date]) acc[date] = [];
+                    acc[date].push(item);
+                    return acc;
+                }, {});
+
+                for (const date in groupedData) {
+                    const itemsForDate = groupedData[date];
+                    const groupRow = document.createElement('tr');
+                    groupRow.className = 'bg-yellow-300 font-bold';
+                    groupRow.innerHTML = `<td colspan="11" class="px-4 py-2 text-gray-800">កាលបរិច្ឆេទ: ${date} (សរុប: ${itemsForDate.length})</td>`;
+                    dataTableBody.appendChild(groupRow);
+                    itemsForDate.forEach(item => renderRow(item));
+                }
+            } else {
+                data.forEach(item => renderRow(item));
+            }
+        }
         
-        captureBtn.addEventListener('click', captureAndSave);
+        function renderRow(item) {
+            const isITSupport = (item.data[3] || '').trim().toLowerCase() === 'it support';
+            const editableAttribute = isITSupport ? '' : 'contenteditable="true"';
+            const nonEditableClass = isITSupport ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : '';
+            
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50 transition-colors cursor-pointer';
+            row.dataset.rowIndex = item.rowIndex; 
+
+            row.innerHTML = `
+                <td class="px-4 py-2 border-b text-sm font-bold">${item.data[0] || ''}</td>  <!-- លរ# (A) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>  <!-- ក្រុម (B) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>  <!-- ថ្នាក់ (C) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>  <!-- ផ្នែកការងារ (D) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>  <!-- ឈ្មោះ (E) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>  <!-- ភេទ (F) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[6] || ''}</td>  <!-- អត្តលេខ (G) -->
+                <td class="px-4 py-2 border-b text-sm">${formatDateForDisplay(item.data[7])}</td> <!-- កាលបរិច្ឆេទ (H) -->
+                <td class="px-4 py-2 border-b text-sm">${item.data[8] || ''}</td>  <!-- កាលវិភាគ (I) -->
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${item.data[9] || ''}</td>  <!-- ម៉ោងចូល (J) -->
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${item.data[10] || ''}</td> <!-- ម៉ោងចេញ (K) -->
+            `;
+
+            row.addEventListener('click', () => {
+                openModal(item.data);
+            });
+            dataTableBody.appendChild(row);
+        }
+
+        function updateSummary(data) {
+            const total = data.length;
+            const females = data.filter(item => item.data[5] === 'ស្រី').length; // Gender is in column F (index 5)
+            const males = total - females;
+            document.getElementById('total-employees').textContent = total;
+            document.getElementById('female-employees').textContent = females;
+            document.getElementById('male-employees').textContent = males;
+        }
         
-        backBtn.addEventListener('click', () => {
-            tomSelectInstance.clear();
-            showView('selection');
+        function updateSortIcons() {
+             document.querySelectorAll('.sortable-header').forEach(header => {
+                const icon = header.querySelector('.sort-icon');
+                if(icon) icon.remove();
+                
+                const colIndex = parseInt(header.dataset.colIndex, 10);
+                if (sortConfig.index === colIndex) {
+                    header.classList.add('sorted');
+                    const newIcon = document.createElement('span');
+                    newIcon.className = 'sort-icon';
+                    newIcon.innerHTML = sortConfig.direction === 'asc' ? '▲' : '▼';
+                    header.appendChild(newIcon);
+                } else {
+                    header.classList.remove('sorted');
+                }
+            });
+        }
+
+        async function updateData() {
+            const editedRows = document.querySelectorAll('tr.edited');
+            if (editedRows.length === 0) {
+                showStatus('មិនមានការកែប្រែដើម្បីរក្សាទុកទេ។', true);
+                return;
+            }
+            const updates = Array.from(editedRows).map(row => ({
+                rowIndex: row.dataset.rowIndex,
+                checkIn: row.cells[9].textContent,
+                checkOut: row.cells[10].textContent
+            }));
+
+            updateDataBtn.disabled = true;
+            saveText.textContent = 'កំពុងរក្សាទុក...';
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ updates })
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showStatus(`បានរក្សាទុក ${result.updatedRows} records ដោយជោគជ័យ!`);
+                    
+                    if (currentMode === 'incomplete') {
+                        const completedRowIndices = updates
+                            .filter(u => u.checkIn.trim() !== '' && u.checkOut.trim() !== '')
+                            .map(u => u.rowIndex.toString());
+
+                        if (completedRowIndices.length > 0) {
+                            allData = allData.filter(item => !completedRowIndices.includes(item.rowIndex.toString()));
+                            applyFiltersAndRender();
+                        }
+                    }
+                    editedRows.forEach(row => row.classList.remove('edited'));
+
+                } else { throw new Error(result.message || 'Unknown error'); }
+            } catch (error) {
+                showStatus(`មានបញ្ហាក្នុងការរក្សាទុក: ${error.message}`, true);
+            } finally {
+                 updateDataBtn.disabled = document.querySelectorAll('tr.edited').length === 0;
+                 saveText.textContent = 'រក្សាទុក';
+            }
+        }
+        
+        // --- MODAL FUNCTIONS ---
+        async function fetchEmployeePhoto(employeeId) {
+            employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=Loading...`;
+            if (!employeeId) {
+                employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=No+ID`;
+                return;
+            };
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getPhoto&id=${employeeId}`);
+                const result = await response.json();
+                if (result.error) { throw new Error(result.error); }
+                
+                if (result.photoUrl) {
+                    employeePhoto.src = result.photoUrl;
+                } else {
+                    employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=No+Photo`;
+                }
+            } catch (error) {
+                console.error("Error fetching photo:", error);
+                employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=Error`;
+            }
+        }
+
+        function openModal(data) {
+            document.getElementById('modal-name').textContent = data[4] || 'N/A';
+            document.getElementById('modal-id').textContent = data[6] || 'N/A';
+            document.getElementById('modal-department').textContent = data[3] || 'N/A';
+            document.getElementById('modal-gender').textContent = data[5] || 'N/A';
+            document.getElementById('modal-class').textContent = data[2] || 'N/A';
+            document.getElementById('modal-group').textContent = data[1] || 'N/A';
+            document.getElementById('modal-date').textContent = formatDateForDisplay(data[7]) || 'N/A';
+            document.getElementById('modal-checkin').textContent = data[9] || 'N/A';
+            document.getElementById('modal-checkout').textContent = data[10] || 'N/A';
+
+            fetchEmployeePhoto(data[6]); // Fetch photo using Employee ID (អត្តលេខ) from column G
+            detailModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            detailModal.classList.add('hidden');
+        }
+
+
+        // --- LOGIN/AUTH FUNCTIONS ---
+        function populateUserDropdown() {
+            for (const email in USERS) {
+                const option = document.createElement('option');
+                option.value = email;
+                option.textContent = USERS[email];
+                userSelect.appendChild(option);
+            }
+        }
+
+        async function handleSendOtp() {
+            const selectedEmail = userSelect.value;
+            if (!selectedEmail) {
+                showLoginStatus('សូមជ្រើសរើសឈ្មោះរបស់អ្នកជាមុនសិន', true);
+                return;
+            }
+
+            sendOtpBtn.disabled = true;
+            sendOtpBtn.querySelector('span').textContent = 'កំពុងផ្ញើ...';
+            showLoginStatus('');
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=sendOtp&email=${selectedEmail}`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    loginForm.classList.add('hidden');
+                    otpForm.classList.remove('hidden');
+                    userEmailDisplay.textContent = selectedEmail;
+                    showLoginStatus('លេខកូដត្រូវបានផ្ញើដោយជោគជ័យ', false);
+                    otpInput.focus();
+                } else {
+                    throw new Error(result.error || 'Unknown error sending OTP.');
+                }
+            } catch (error) {
+                console.error('OTP Send Error:', error);
+                showLoginStatus(`មានបញ្ហាក្នុងការផ្ញើ OTP: ${error.message}`, true);
+            } finally {
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.querySelector('span').textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
+            }
+        }
+
+        async function handleVerifyOtp() {
+            const selectedEmail = userSelect.value;
+            const otp = otpInput.value;
+            if (otp.length !== 6) {
+                showLoginStatus('សូមបញ្ចូលលេខកូដ OTP 6 ខ្ទង់', true);
+                return;
+            }
+            
+            verifyOtpBtn.disabled = true;
+            verifyOtpBtn.textContent = 'កំពុងផ្ទៀងផ្ទាត់...';
+            showLoginStatus('');
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=verifyOtp&email=${selectedEmail}&otp=${otp}`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Login successful
+                    const loggedInUser = { email: selectedEmail, name: USERS[selectedEmail] };
+                    localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
+                    showMainContent(loggedInUser);
+                } else {
+                     throw new Error(result.error || 'Unknown error verifying OTP.');
+                }
+            } catch (error) {
+                 console.error('OTP Verify Error:', error);
+                 showLoginStatus(`ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ: ${error.message}`, true);
+            } finally {
+                verifyOtpBtn.disabled = false;
+                verifyOtpBtn.textContent = 'បញ្ជាក់ និងចូលប្រើ';
+            }
+        }
+        
+        function handleLogout() {
+            localStorage.removeItem('loggedInUser');
+            loginScreen.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            otpInput.value = '';
+            userSelect.value = '';
+            loginForm.classList.remove('hidden');
+            otpForm.classList.add('hidden');
+            showLoginStatus('');
+        }
+        
+        function showMainContent(user) {
+            loginScreen.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+            loggedInUserSpan.textContent = user.name;
+            showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
+            validateWebAppUrl(); 
+        }
+
+        function checkLoginSession() {
+            const storedUser = localStorage.getItem('loggedInUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.email && user.name) {
+                        showMainContent(user);
+                    }
+                } catch (e) {
+                    // Invalid JSON, treat as not logged in
+                    localStorage.removeItem('loggedInUser');
+                }
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        dataTableBody.addEventListener('input', e => {
+            if (e.target.isContentEditable) {
+                e.target.closest('tr').classList.add('edited');
+                updateDataBtn.disabled = false;
+            }
         });
 
-        // --- Initialization ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            await fetchStudentData();
-            initializeOrUpdateTomSelect();
-            if (window.innerWidth >= 1024) { // lg breakpoint
-                startCamera();
+        dateFilter.addEventListener('change', fetchData);
+        searchInput.addEventListener('input', applyFiltersAndRender);
+        updateDataBtn.addEventListener('click', updateData);
+        sendOtpBtn.addEventListener('click', handleSendOtp);
+        verifyOtpBtn.addEventListener('click', handleVerifyOtp);
+        logoutBtn.addEventListener('click', handleLogout);
+        closeModalBtn.addEventListener('click', closeModal);
+        detailModal.addEventListener('click', (e) => {
+            if (e.target === detailModal) { // Close if clicking on the overlay
+                closeModal();
             }
+        });
+
+        
+        incompleteDataBtn.addEventListener('click', () => {
+            if (currentMode === 'date') {
+                currentMode = 'incomplete';
+                dateFilterWrapper.classList.add('hidden');
+                searchInput.value = '';
+                fetchIncompleteData();
+                
+                incompleteDataBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+                incompleteDataBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                incompleteDataBtn.querySelector('span').textContent = 'ត្រឡប់ទៅ Filter តាមកាលបរិច្ឆេទ';
+            } else {
+                currentMode = 'date';
+                dateFilterWrapper.classList.remove('hidden');
+                searchInput.value = '';
+                allData = [];
+                filteredData = [];
+                renderTable([]);
+                updateSummary([]);
+                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
+                
+                incompleteDataBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                incompleteDataBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
+                incompleteDataBtn.querySelector('span').textContent = 'បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)';
+            }
+        });
+        
+        document.querySelectorAll('.sortable-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const index = parseInt(header.dataset.colIndex, 10);
+                if (sortConfig.index === index) {
+                    sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortConfig.index = index;
+                    sortConfig.direction = 'asc';
+                }
+                applyFiltersAndRender();
+            });
+        });
+        
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            populateUserDropdown();
+            checkLoginSession();
         });
     </script>
 </body>
