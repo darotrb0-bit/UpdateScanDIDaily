@@ -14,14 +14,23 @@
         .font-koulen {
             font-family: 'Koulen', cursive;
         }
+        /* Style for editable cells */
         [contenteditable="true"] {
             background-color: #fef9c3; /* yellow-100 */
+            transition: background-color 0.3s ease;
         }
         [contenteditable="true"]:focus {
             outline: 2px solid #3b82f6; /* blue-500 */
             background-color: #ffffff;
         }
-        .edited { background-color: #dbeafe !important; }
+        /* Style for rows that have been edited */
+        .edited { 
+            background-color: #dbeafe !important; /* blue-100 */
+        }
+        tr {
+            transition: background-color 0.2s ease-in-out;
+        }
+        /* Loader animation */
         .loader {
             border: 5px solid #f3f3f3;
             border-top: 5px solid #3498db;
@@ -30,10 +39,19 @@
             height: 50px;
             animation: spin 1s linear infinite;
         }
+        .btn-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Table header sorting styles */
         .sortable-header { cursor: pointer; user-select: none; }
         .sortable-header:hover { background-color: #e5e7eb; }
         .sort-icon {
@@ -42,25 +60,53 @@
             height: 1em;
             margin-left: 8px;
             opacity: 0.4;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, transform 0.2s;
         }
         .sortable-header.sorted .sort-icon { opacity: 1; }
+        .sort-icon.desc { transform: rotate(180deg); }
+        
+        /* Modal animation */
         #detail-modal .modal-content {
             animation: slide-up 0.3s ease-out;
         }
         @keyframes slide-up {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Toast Notification styles */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .toast {
+            background-color: #fff;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+            border-left: 5px solid;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.success { border-color: #28a745; }
+        .toast.error { border-color: #dc3545; }
     </style>
 </head>
 <body class="text-gray-800">
+
+    <!-- Toast container for notifications -->
+    <div id="toast-container"></div>
 
     <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
@@ -74,7 +120,7 @@
                 </select>
                 <button id="send-otp-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>
-                    <span>ផ្ញើលេខកូដ (OTP) ម្ដងទៀត</span>
+                    <span id="send-otp-text">ផ្ញើលេខកូដ (OTP)</span>
                 </button>
             </div>
 
@@ -85,7 +131,7 @@
                     បញ្ជាក់ និងចូលប្រើ
                 </button>
             </div>
-             <div id="login-status" class="mt-4 text-sm h-5"></div>
+             <div id="login-status" class="mt-4 text-sm h-5" aria-live="polite"></div>
         </div>
     </div>
 
@@ -95,24 +141,23 @@
             <h1 class="text-2xl md:text-3xl font-koulen text-blue-600 text-center flex-grow">ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យបុគ្គលិក (ឆ្លាតវៃ)</h1>
             <div class="flex items-center gap-2">
                  <span id="logged-in-user" class="text-sm text-gray-600 hidden md:inline"></span>
-                 <button id="logout-btn" title="ចាកចេញពីប្រព័ន្ធ" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+                 <button id="logout-btn" title="ចាកចេញពីប្រព័ន្ធ" aria-label="Log Out" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
                 </button>
             </div>
         </header>
 
         <main class="bg-white shadow-md rounded-lg p-4">
-            <!-- New Button for Incomplete Data -->
+            <!-- Action Buttons -->
             <div class="mb-4">
                  <button id="incompleteDataBtn" class="w-full bg-orange-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-600 transition duration-300 flex items-center justify-center gap-2">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16"><path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/><path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/></svg>
-                    <span>បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16"><path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/><path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/></svg>
+                     <span>បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)</span>
                 </button>
             </div>
             
-            <!-- Summary and Filters Combined Section -->
+            <!-- Summary and Filters -->
             <div class="mb-4 space-y-4">
-                <!-- Summary Stats (More Compact) -->
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
                     <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg">
                         <h3 class="text-sm font-bold text-blue-800">បុគ្គលិកសរុប</h3>
@@ -128,7 +173,6 @@
                     </div>
                 </div>
 
-                <!-- Filter Controls (More Compact) -->
                 <div class="flex flex-wrap items-end gap-4 p-3 bg-gray-50 rounded-lg border">
                     <div id="dateFilterWrapper" class="flex-grow min-w-[180px]">
                         <label for="dateFilter" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើសកាលបរិច្ឆេទ:</label>
@@ -140,14 +184,15 @@
                     </div>
                     <div>
                         <button id="updateDataBtn" class="w-full bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center gap-2" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
-                            <span id="save-text">រក្សាទុក</span>
+                             <div id="save-spinner" class="btn-spinner hidden"></div>
+                             <svg id="save-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
+                             <span id="save-text">រក្សាទុក</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div id="status" class="text-center my-4"></div>
+            <div id="status" class="text-center my-4" aria-live="polite"></div>
             <div id="loader" class="hidden flex justify-center items-center my-8"><div class="loader"></div></div>
 
             <div class="overflow-x-auto">
@@ -178,7 +223,7 @@
         <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
             <div class="p-5 border-b flex justify-between items-center bg-gray-50">
                 <h3 class="text-xl font-koulen text-blue-700">ព័ត៌មានលម្អិតបុគ្គលិក</h3>
-                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-700">
+                <button id="close-modal-btn" aria-label="Close modal" class="text-gray-400 hover:text-gray-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
                         <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
                     </svg>
@@ -219,9 +264,9 @@
 
     <script>
         // ===================================================================================
-        // !!! សំខាន់ !!! សូមដាក់ Web App URL ពី Google Apps Script របស់អ្នកនៅទីនេះ
+        // !!! IMPORTANT !!! Please insert your Google Apps Script Web App URL here.
         // ===================================================================================
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXxZ6HAarjfMp8Kh-XpP2GoP6XFZf3cpTyDWJr-uNGJst-hPoNftzzfHtd9B2KQszGmA/exec'; // <--- ដាក់ Web App URL របស់អ្នកនៅទីនេះ
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXxZ6HAarjfMp8Kh-XpP2GoP6XFZf3cpTyDWJr-uNGJst-hPoNftzzfHtd9B2KQszGmA/exec'; // <--- Insert your Web App URL here
 
         // --- USER CONFIGURATION ---
         const USERS = {
@@ -234,51 +279,83 @@
             'chanthaihin168@gmail.com': 'ហឹន ចាន់ថៃ'
         };
 
-        // --- DOM ELEMENTS ---
-        const loginScreen = document.getElementById('login-screen');
-        const mainContent = document.getElementById('main-content');
-        const loginForm = document.getElementById('login-form');
-        const otpForm = document.getElementById('otp-form');
-        const userSelect = document.getElementById('user-select');
-        const sendOtpBtn = document.getElementById('send-otp-btn');
-        const verifyOtpBtn = document.getElementById('verify-otp-btn');
-        const otpInput = document.getElementById('otp-input');
-        const userEmailDisplay = document.getElementById('user-email-display');
-        const loginStatus = document.getElementById('login-status');
-        const logoutBtn = document.getElementById('logout-btn');
-        const loggedInUserSpan = document.getElementById('logged-in-user');
+        // --- DOM ELEMENT CACHING ---
+        const getEl = (id) => document.getElementById(id);
+        const DOM = {
+            loginScreen: getEl('login-screen'),
+            mainContent: getEl('main-content'),
+            loginForm: getEl('login-form'),
+            otpForm: getEl('otp-form'),
+            userSelect: getEl('user-select'),
+            sendOtpBtn: getEl('send-otp-btn'),
+            sendOtpText: getEl('send-otp-text'),
+            verifyOtpBtn: getEl('verify-otp-btn'),
+            otpInput: getEl('otp-input'),
+            userEmailDisplay: getEl('user-email-display'),
+            loginStatus: getEl('login-status'),
+            logoutBtn: getEl('logout-btn'),
+            loggedInUserSpan: getEl('logged-in-user'),
+            dateFilter: getEl('dateFilter'),
+            dateFilterWrapper: getEl('dateFilterWrapper'),
+            updateDataBtn: getEl('updateDataBtn'),
+            dataTableBody: getEl('dataTableBody'),
+            loader: getEl('loader'),
+            statusDiv: getEl('status'),
+            saveText: getEl('save-text'),
+            saveSpinner: getEl('save-spinner'),
+            saveIcon: getEl('save-icon'),
+            searchInput: getEl('searchInput'),
+            incompleteDataBtn: getEl('incompleteDataBtn'),
+            detailModal: getEl('detail-modal'),
+            closeModalBtn: getEl('close-modal-btn'),
+            employeePhoto: getEl('employee-photo'),
+        };
         
-        const dateFilter = document.getElementById('dateFilter');
-        const dateFilterWrapper = document.getElementById('dateFilterWrapper');
-        const updateDataBtn = document.getElementById('updateDataBtn');
-        const dataTableBody = document.getElementById('dataTableBody');
-        const loader = document.getElementById('loader');
-        const statusDiv = document.getElementById('status');
-        const saveText = document.getElementById('save-text');
-        const searchInput = document.getElementById('searchInput');
-        const incompleteDataBtn = document.getElementById('incompleteDataBtn');
-
-        // Modal Elements
-        const detailModal = document.getElementById('detail-modal');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const employeePhoto = document.getElementById('employee-photo');
+        // --- APPLICATION STATE ---
+        const state = {
+            allData: [],
+            filteredData: [],
+            sortConfig: { index: null, direction: 'asc' },
+            currentMode: 'date', // 'date' or 'incomplete'
+            otpCooldown: 0,
+            currentUser: null,
+        };
         
-        // --- APP STATE ---
-        let allData = [];
-        let filteredData = [];
-        let sortConfig = { index: null, direction: 'asc' };
-        let currentMode = 'date'; // 'date' or 'incomplete'
+        // --- UTILITY & HELPER FUNCTIONS ---
+        
+        /**
+         * Shows a toast notification.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'success' or 'error'.
+         */
+        function showToast(message, type = 'success') {
+            const toastContainer = getEl('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
 
-        // --- HELPER FUNCTIONS ---
-        function showLoader() { loader.classList.remove('hidden'); statusDiv.textContent = ''; dataTableBody.innerHTML = ''; }
-        function hideLoader() { loader.classList.add('hidden'); }
-        function showStatus(message, isError = false) {
-            statusDiv.textContent = message;
-            statusDiv.className = isError ? 'text-center my-4 text-red-600 font-bold' : 'text-center my-4 text-green-600 font-semibold';
+            // Trigger reflow to enable animation
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Remove the toast after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 4000);
         }
+
+        const showLoader = () => { DOM.loader.classList.remove('hidden'); DOM.statusDiv.textContent = ''; DOM.dataTableBody.innerHTML = ''; }
+        const hideLoader = () => DOM.loader.classList.add('hidden');
+        
+        function showStatus(message, isError = false) {
+            DOM.statusDiv.textContent = message;
+            DOM.statusDiv.className = isError ? 'text-center my-4 text-red-600 font-bold' : 'text-center my-4 text-green-600 font-semibold';
+        }
+        
         function showLoginStatus(message, isError = false) {
-            loginStatus.textContent = message;
-            loginStatus.className = isError ? 'mt-4 text-sm h-5 text-red-600' : 'mt-4 text-sm h-5 text-green-600';
+            DOM.loginStatus.textContent = message;
+            DOM.loginStatus.className = isError ? 'mt-4 text-sm h-5 text-red-600' : 'mt-4 text-sm h-5 text-green-600';
         }
         
         function validateWebAppUrl() {
@@ -292,45 +369,69 @@
         function formatDateForDisplay(dateStr) {
             if (!dateStr) return '';
             const date = new Date(dateStr);
-             if (isNaN(date.getTime()) || date.getFullYear() < 1971) return ''; 
+            if (isNaN(date.getTime()) || date.getFullYear() < 1971) return ''; 
             const options = { day: '2-digit', month: 'short', year: 'numeric' };
             return date.toLocaleDateString('en-GB', options).replace(/ /g, '-');
+        }
+
+        function formatTimeForDisplay(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '';
+            // Format time as HH:mm:ss in 24-hour format
+            const options = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            return date.toLocaleTimeString('en-GB', options);
         }
         
         function formatDateForAPI(date) {
             const d = new Date(date);
-            let month = '' + (d.getMonth() + 1);
-            let day = '' + d.getDate();
             const year = d.getFullYear();
-
-            if (month.length < 2) month = '0' + month;
-            if (day.length < 2) day = '0' + day;
-
-            return [year, month, day].join('-');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
         
-        // --- DATA HANDLING FUNCTIONS ---
-        async function fetchData() {
-            if (!validateWebAppUrl() || currentMode !== 'date') return;
-            showLoader();
-            updateDataBtn.disabled = true;
+        // --- DATA HANDLING & RENDERING ---
 
-            const selectedDate = dateFilter.value;
+        async function apiCall(action, params = {}) {
+            const url = new URL(WEB_APP_URL);
+            url.searchParams.append('action', action);
+            for (const key in params) {
+                url.searchParams.append(key, params[key]);
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                return data;
+            } catch (error) {
+                console.error(`API Call Error (${action}):`, error);
+                throw error; // Re-throw for specific handlers
+            }
+        }
+
+        async function fetchData() {
+            if (!validateWebAppUrl() || state.currentMode !== 'date') return;
+            showLoader();
+            DOM.updateDataBtn.disabled = true;
+
+            const selectedDate = DOM.dateFilter.value;
             if (!selectedDate) {
                 hideLoader();
                 showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ។', true);
                 return;
             }
             
-            const apiDate = formatDateForAPI(selectedDate);
-
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=getData&date=${apiDate}`);
-                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
-                const data = await response.json();
-                 if (data.error) throw new Error(data.error);
-
-                allData = data;
+                const data = await apiCall('getData', { date: selectedDate });
+                state.allData = data;
                 applyFiltersAndRender();
                 if (data.length === 0) {
                     showStatus(`រកមិនឃើញទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)} ទេ។`);
@@ -338,7 +439,6 @@
                      showStatus(`រកឃើញ ${data.length} ទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)}`);
                 }
             } catch (error) {
-                console.error('Error fetching data:', error);
                 showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យ: ${error.message}`, true);
             } finally {
                 hideLoader();
@@ -348,25 +448,19 @@
         async function fetchIncompleteData() {
             if (!validateWebAppUrl()) return;
             showLoader();
-            updateDataBtn.disabled = true;
+            DOM.updateDataBtn.disabled = true;
 
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=getIncompleteData`);
-                if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-
-                data.sort((a, b) => (new Date(b.data[7])) - (new Date(a.data[7]))); // Sort by date (column H)
-                allData = data;
+                const data = await apiCall('getIncompleteData');
+                data.sort((a, b) => (new Date(b.data[7])) - (new Date(a.data[7]))); // Sort by date desc
+                state.allData = data;
                 applyFiltersAndRender();
-
                 if (data.length === 0) {
                     showStatus('រកមិនឃើញទិន្នន័យមិនពេញលេញណាមួយទេ។');
                 } else {
                     showStatus(`រកឃើញ ${data.length} ទិន្នន័យមិនពេញលេញ`, false);
                 }
             } catch (error) {
-                console.error('Error fetching incomplete data:', error);
                 showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យមិនពេញលេញ: ${error.message}`, true);
             } finally {
                 hideLoader();
@@ -374,44 +468,44 @@
         }
 
         function applyFiltersAndRender() {
-            let dataToRender = allData;
-            const searchTerm = searchInput.value.toLowerCase();
-            if(searchTerm){
-                 dataToRender = dataToRender.filter(item => 
-                    item.data.some(cell => cell && cell.toString().toLowerCase().includes(searchTerm))
-                );
-            }
+            const searchTerm = DOM.searchInput.value.toLowerCase();
+            state.filteredData = state.allData.filter(item => 
+                 searchTerm ? item.data.some(cell => cell && cell.toString().toLowerCase().includes(searchTerm)) : true
+            );
             
-            filteredData = dataToRender;
             applySorting();
-            renderTable(filteredData);
-            updateSummary(filteredData);
+            renderTable(state.filteredData);
+            updateSummary(state.filteredData);
         }
         
         function applySorting() {
-            if (sortConfig.index === null) return;
+            if (state.sortConfig.index === null) return;
             
-            filteredData.sort((a, b) => {
-                const valA = a.data[sortConfig.index] || '';
-                const valB = b.data[sortConfig.index] || '';
+            state.filteredData.sort((a, b) => {
+                const valA = a.data[state.sortConfig.index] || '';
+                const valB = b.data[state.sortConfig.index] || '';
                 
-                if(sortConfig.index === 7){ // Sorting for Date column (H)
+                if (state.sortConfig.index === 7) { // Date column
                     const dateA = new Date(valA).getTime() || 0;
                     const dateB = new Date(valB).getTime() || 0;
-                    return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+                    return state.sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
                 }
 
                 const comparison = valA.toString().localeCompare(valB.toString(), 'km-KH', { numeric: true });
-                return sortConfig.direction === 'asc' ? comparison : -comparison;
+                return state.sortConfig.direction === 'asc' ? comparison : -comparison;
             });
             updateSortIcons();
         }
 
         function renderTable(data) {
-            dataTableBody.innerHTML = '';
-            if (data.length === 0) return;
+            DOM.dataTableBody.innerHTML = '';
+            if (data.length === 0) {
+                 DOM.dataTableBody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-gray-500">រកមិនឃើញទិន្នន័យទេ។</td></tr>`;
+                 return;
+            }
 
-            if (currentMode === 'incomplete') {
+            const fragment = document.createDocumentFragment();
+            if (state.currentMode === 'incomplete') {
                 const groupedData = data.reduce((acc, item) => {
                     const date = formatDateForDisplay(item.data[7]) || 'មិនមានកាលបរិច្ឆេទ';
                     if (!acc[date]) acc[date] = [];
@@ -422,52 +516,57 @@
                 for (const date in groupedData) {
                     const itemsForDate = groupedData[date];
                     const groupRow = document.createElement('tr');
-                    groupRow.className = 'bg-yellow-300 font-bold';
+                    groupRow.className = 'bg-yellow-300 font-bold sticky top-0'; // Sticky header for date group
                     groupRow.innerHTML = `<td colspan="11" class="px-4 py-2 text-gray-800">កាលបរិច្ឆេទ: ${date} (សរុប: ${itemsForDate.length})</td>`;
-                    dataTableBody.appendChild(groupRow);
-                    itemsForDate.forEach(item => renderRow(item));
+                    fragment.appendChild(groupRow);
+                    itemsForDate.forEach(item => fragment.appendChild(createRowElement(item)));
                 }
             } else {
-                data.forEach(item => renderRow(item));
+                data.forEach(item => fragment.appendChild(createRowElement(item)));
             }
+            DOM.dataTableBody.appendChild(fragment);
         }
         
-        function renderRow(item) {
+        function createRowElement(item) {
             const isITSupport = (item.data[3] || '').trim().toLowerCase() === 'it support';
-            const editableAttribute = isITSupport ? '' : 'contenteditable="true"';
-            const nonEditableClass = isITSupport ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : '';
+            const isAdmin = state.currentUser && state.currentUser.email === 'darotrb0@gmail.com';
+
+            const canEditThisRow = !isITSupport || isAdmin;
+
+            const editableAttribute = canEditThisRow ? 'contenteditable="true"' : '';
+            const nonEditableClass = canEditThisRow ? '' : 'bg-gray-200 text-gray-500 cursor-not-allowed';
             
             const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50 transition-colors cursor-pointer';
+            row.className = 'hover:bg-gray-50 cursor-pointer';
             row.dataset.rowIndex = item.rowIndex; 
 
             row.innerHTML = `
-                <td class="px-4 py-2 border-b text-sm font-bold">${item.data[0] || ''}</td>  <!-- លរ# (A) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>  <!-- ក្រុម (B) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>  <!-- ថ្នាក់ (C) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>  <!-- ផ្នែកការងារ (D) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>  <!-- ឈ្មោះ (E) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>  <!-- ភេទ (F) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[6] || ''}</td>  <!-- អត្តលេខ (G) -->
-                <td class="px-4 py-2 border-b text-sm">${formatDateForDisplay(item.data[7])}</td> <!-- កាលបរិច្ឆេទ (H) -->
-                <td class="px-4 py-2 border-b text-sm">${item.data[8] || ''}</td>  <!-- កាលវិភាគ (I) -->
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${item.data[9] || ''}</td>  <!-- ម៉ោងចូល (J) -->
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${item.data[10] || ''}</td> <!-- ម៉ោងចេញ (K) -->
+                <td class="px-4 py-2 border-b text-sm font-bold">${item.data[0] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[6] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm">${formatDateForDisplay(item.data[7])}</td>
+                <td class="px-4 py-2 border-b text-sm">${item.data[8] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${formatTimeForDisplay(item.data[9])}</td>
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${formatTimeForDisplay(item.data[10])}</td>
             `;
 
-            row.addEventListener('click', () => {
+            row.addEventListener('click', (e) => {
+                if (e.target.isContentEditable) return;
                 openModal(item.data);
             });
-            dataTableBody.appendChild(row);
+            return row;
         }
 
         function updateSummary(data) {
             const total = data.length;
-            const females = data.filter(item => item.data[5] === 'ស្រី').length; // Gender is in column F (index 5)
-            const males = total - females;
-            document.getElementById('total-employees').textContent = total;
-            document.getElementById('female-employees').textContent = females;
-            document.getElementById('male-employees').textContent = males;
+            const females = data.filter(item => item.data[5] === 'ស្រី').length;
+            getEl('total-employees').textContent = total;
+            getEl('female-employees').textContent = females;
+            getEl('male-employees').textContent = total - females;
         }
         
         function updateSortIcons() {
@@ -476,11 +575,12 @@
                 if(icon) icon.remove();
                 
                 const colIndex = parseInt(header.dataset.colIndex, 10);
-                if (sortConfig.index === colIndex) {
+                if (state.sortConfig.index === colIndex) {
                     header.classList.add('sorted');
                     const newIcon = document.createElement('span');
                     newIcon.className = 'sort-icon';
-                    newIcon.innerHTML = sortConfig.direction === 'asc' ? '▲' : '▼';
+                    newIcon.innerHTML = '▲';
+                    if (state.sortConfig.direction === 'desc') newIcon.classList.add('desc');
                     header.appendChild(newIcon);
                 } else {
                     header.classList.remove('sorted');
@@ -491,17 +591,20 @@
         async function updateData() {
             const editedRows = document.querySelectorAll('tr.edited');
             if (editedRows.length === 0) {
-                showStatus('មិនមានការកែប្រែដើម្បីរក្សាទុកទេ។', true);
+                showToast('មិនមានការកែប្រែដើម្បីរក្សាទុកទេ។', 'error');
                 return;
             }
             const updates = Array.from(editedRows).map(row => ({
                 rowIndex: row.dataset.rowIndex,
-                checkIn: row.cells[9].textContent,
-                checkOut: row.cells[10].textContent
+                checkIn: row.cells[9].textContent.trim(),
+                checkOut: row.cells[10].textContent.trim()
             }));
 
-            updateDataBtn.disabled = true;
-            saveText.textContent = 'កំពុងរក្សាទុក...';
+            DOM.updateDataBtn.disabled = true;
+            DOM.saveText.textContent = 'កំពុងរក្សាទុក';
+            DOM.saveSpinner.classList.remove('hidden');
+            DOM.saveIcon.classList.add('hidden');
+            
             try {
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
@@ -509,246 +612,248 @@
                     body: JSON.stringify({ updates })
                 });
                 const result = await response.json();
-                if (result.status === 'success') {
-                    showStatus(`បានរក្សាទុក ${result.updatedRows} records ដោយជោគជ័យ!`);
-                    
-                    if (currentMode === 'incomplete') {
-                        const completedRowIndices = updates
-                            .filter(u => u.checkIn.trim() !== '' && u.checkOut.trim() !== '')
-                            .map(u => u.rowIndex.toString());
-
-                        if (completedRowIndices.length > 0) {
-                            allData = allData.filter(item => !completedRowIndices.includes(item.rowIndex.toString()));
-                            applyFiltersAndRender();
-                        }
+                if (result.status !== 'success') throw new Error(result.message || 'Unknown error');
+                
+                showToast(`បានរក្សាទុក ${result.updatedRows} records ដោយជោគជ័យ!`, 'success');
+                
+                if (state.currentMode === 'incomplete') {
+                    const completedRowIndices = updates
+                        .filter(u => u.checkIn && u.checkOut)
+                        .map(u => u.rowIndex.toString());
+                    if (completedRowIndices.length > 0) {
+                        state.allData = state.allData.filter(item => !completedRowIndices.includes(item.rowIndex.toString()));
+                        applyFiltersAndRender();
                     }
-                    editedRows.forEach(row => row.classList.remove('edited'));
+                }
+                editedRows.forEach(row => row.classList.remove('edited'));
 
-                } else { throw new Error(result.message || 'Unknown error'); }
             } catch (error) {
-                showStatus(`មានបញ្ហាក្នុងការរក្សាទុក: ${error.message}`, true);
+                showToast(`មានបញ្ហាក្នុងការរក្សាទុក: ${error.message}`, 'error');
             } finally {
-                 updateDataBtn.disabled = document.querySelectorAll('tr.edited').length === 0;
-                 saveText.textContent = 'រក្សាទុក';
+                 DOM.updateDataBtn.disabled = document.querySelectorAll('tr.edited').length === 0;
+                 DOM.saveText.textContent = 'រក្សាទុក';
+                 DOM.saveSpinner.classList.add('hidden');
+                 DOM.saveIcon.classList.remove('hidden');
             }
         }
         
-        // --- MODAL FUNCTIONS ---
+        // --- MODAL & PHOTO FUNCTIONS ---
         async function fetchEmployeePhoto(employeeId) {
-            employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=Loading...`;
+            DOM.employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=Loading...`;
             if (!employeeId) {
-                employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=No+ID`;
+                DOM.employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=No+ID`;
                 return;
             };
 
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=getPhoto&id=${employeeId}`);
-                const result = await response.json();
-                if (result.error) { throw new Error(result.error); }
-                
-                if (result.photoUrl) {
-                    employeePhoto.src = result.photoUrl;
-                } else {
-                    employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=No+Photo`;
-                }
+                const result = await apiCall('getPhoto', { id: employeeId });
+                DOM.employeePhoto.src = result.photoUrl || `https://placehold.co/128x128/EBF4FF/7F9CF5?text=No+Photo`;
             } catch (error) {
-                console.error("Error fetching photo:", error);
-                employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=Error`;
+                DOM.employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=Error`;
             }
         }
 
         function openModal(data) {
-            document.getElementById('modal-name').textContent = data[4] || 'N/A';
-            document.getElementById('modal-id').textContent = data[6] || 'N/A';
-            document.getElementById('modal-department').textContent = data[3] || 'N/A';
-            document.getElementById('modal-gender').textContent = data[5] || 'N/A';
-            document.getElementById('modal-class').textContent = data[2] || 'N/A';
-            document.getElementById('modal-group').textContent = data[1] || 'N/A';
-            document.getElementById('modal-date').textContent = formatDateForDisplay(data[7]) || 'N/A';
-            document.getElementById('modal-checkin').textContent = data[9] || 'N/A';
-            document.getElementById('modal-checkout').textContent = data[10] || 'N/A';
+            getEl('modal-name').textContent = data[4] || 'N/A';
+            getEl('modal-id').textContent = data[6] || 'N/A';
+            getEl('modal-department').textContent = data[3] || 'N/A';
+            getEl('modal-gender').textContent = data[5] || 'N/A';
+            getEl('modal-class').textContent = data[2] || 'N/A';
+            getEl('modal-group').textContent = data[1] || 'N/A';
+            getEl('modal-date').textContent = formatDateForDisplay(data[7]) || 'N/A';
+            getEl('modal-checkin').textContent = formatTimeForDisplay(data[9]) || 'N/A';
+            getEl('modal-checkout').textContent = formatTimeForDisplay(data[10]) || 'N/A';
 
-            fetchEmployeePhoto(data[6]); // Fetch photo using Employee ID (អត្តលេខ) from column G
-            detailModal.classList.remove('hidden');
+            fetchEmployeePhoto(data[6]);
+            DOM.detailModal.classList.remove('hidden');
         }
 
-        function closeModal() {
-            detailModal.classList.add('hidden');
-        }
-
-
-        // --- LOGIN/AUTH FUNCTIONS ---
+        // --- AUTHENTICATION FUNCTIONS ---
         function populateUserDropdown() {
+            const fragment = document.createDocumentFragment();
             for (const email in USERS) {
                 const option = document.createElement('option');
                 option.value = email;
                 option.textContent = USERS[email];
-                userSelect.appendChild(option);
+                fragment.appendChild(option);
             }
+            DOM.userSelect.appendChild(fragment);
+        }
+        
+        function startOtpCooldown() {
+            state.otpCooldown = 30;
+            DOM.sendOtpBtn.disabled = true;
+            const interval = setInterval(() => {
+                state.otpCooldown--;
+                if (state.otpCooldown > 0) {
+                    DOM.sendOtpText.textContent = `ផ្ញើម្ដងទៀត (${state.otpCooldown}វិនាទី)`;
+                } else {
+                    clearInterval(interval);
+                    DOM.sendOtpBtn.disabled = false;
+                    DOM.sendOtpText.textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
+                }
+            }, 1000);
         }
 
         async function handleSendOtp() {
-            const selectedEmail = userSelect.value;
+            const selectedEmail = DOM.userSelect.value;
             if (!selectedEmail) {
                 showLoginStatus('សូមជ្រើសរើសឈ្មោះរបស់អ្នកជាមុនសិន', true);
                 return;
             }
 
-            sendOtpBtn.disabled = true;
-            sendOtpBtn.querySelector('span').textContent = 'កំពុងផ្ញើ...';
+            DOM.sendOtpBtn.disabled = true;
+            DOM.sendOtpText.textContent = 'កំពុងផ្ញើ...';
             showLoginStatus('');
 
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=sendOtp&email=${selectedEmail}`);
-                const result = await response.json();
-                if (result.status === 'success') {
-                    loginForm.classList.add('hidden');
-                    otpForm.classList.remove('hidden');
-                    userEmailDisplay.textContent = selectedEmail;
-                    showLoginStatus('លេខកូដត្រូវបានផ្ញើដោយជោគជ័យ', false);
-                    otpInput.focus();
-                } else {
-                    throw new Error(result.error || 'Unknown error sending OTP.');
-                }
+                await apiCall('sendOtp', { email: selectedEmail });
+                DOM.loginForm.classList.add('hidden');
+                DOM.otpForm.classList.remove('hidden');
+                DOM.userEmailDisplay.textContent = selectedEmail;
+                showLoginStatus('លេខកូដត្រូវបានផ្ញើដោយជោគជ័យ', false);
+                DOM.otpInput.focus();
+                startOtpCooldown();
             } catch (error) {
-                console.error('OTP Send Error:', error);
                 showLoginStatus(`មានបញ្ហាក្នុងការផ្ញើ OTP: ${error.message}`, true);
-            } finally {
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.querySelector('span').textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
+                DOM.sendOtpBtn.disabled = false;
+                DOM.sendOtpText.textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
             }
         }
 
         async function handleVerifyOtp() {
-            const selectedEmail = userSelect.value;
-            const otp = otpInput.value;
+            const selectedEmail = DOM.userSelect.value;
+            const otp = DOM.otpInput.value;
             if (otp.length !== 6) {
                 showLoginStatus('សូមបញ្ចូលលេខកូដ OTP 6 ខ្ទង់', true);
                 return;
             }
             
-            verifyOtpBtn.disabled = true;
-            verifyOtpBtn.textContent = 'កំពុងផ្ទៀងផ្ទាត់...';
+            DOM.verifyOtpBtn.disabled = true;
+            DOM.verifyOtpBtn.textContent = 'កំពុងផ្ទៀងផ្ទាត់...';
             showLoginStatus('');
 
             try {
-                const response = await fetch(`${WEB_APP_URL}?action=verifyOtp&email=${selectedEmail}&otp=${otp}`);
-                const result = await response.json();
-                if (result.status === 'success') {
-                    // Login successful
-                    const loggedInUser = { email: selectedEmail, name: USERS[selectedEmail] };
-                    localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
-                    showMainContent(loggedInUser);
-                } else {
-                     throw new Error(result.error || 'Unknown error verifying OTP.');
-                }
+                await apiCall('verifyOtp', { email: selectedEmail, otp });
+                const loggedInUser = { email: selectedEmail, name: USERS[selectedEmail] };
+                localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
+                showMainContent(loggedInUser);
             } catch (error) {
-                 console.error('OTP Verify Error:', error);
                  showLoginStatus(`ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ: ${error.message}`, true);
             } finally {
-                verifyOtpBtn.disabled = false;
-                verifyOtpBtn.textContent = 'បញ្ជាក់ និងចូលប្រើ';
+                DOM.verifyOtpBtn.disabled = false;
+                DOM.verifyOtpBtn.textContent = 'បញ្ជាក់ និងចូលប្រើ';
             }
         }
         
         function handleLogout() {
             localStorage.removeItem('loggedInUser');
-            loginScreen.classList.remove('hidden');
-            mainContent.classList.add('hidden');
-            otpInput.value = '';
-            userSelect.value = '';
-            loginForm.classList.remove('hidden');
-            otpForm.classList.add('hidden');
+            state.currentUser = null;
+            DOM.loginScreen.classList.remove('hidden');
+            DOM.mainContent.classList.add('hidden');
+            DOM.otpInput.value = '';
+            DOM.userSelect.value = '';
+            DOM.loginForm.classList.remove('hidden');
+            DOM.otpForm.classList.add('hidden');
             showLoginStatus('');
         }
         
         function showMainContent(user) {
-            loginScreen.classList.add('hidden');
-            mainContent.classList.remove('hidden');
-            loggedInUserSpan.textContent = user.name;
-            showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
-            validateWebAppUrl(); 
+            state.currentUser = user;
+            DOM.loginScreen.classList.add('hidden');
+            DOM.mainContent.classList.remove('hidden');
+            DOM.loggedInUserSpan.textContent = user.name;
+            if (validateWebAppUrl() && DOM.dateFilter.value) {
+                fetchData();
+            } else if (validateWebAppUrl()) {
+                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
+            }
         }
 
         function checkLoginSession() {
             const storedUser = localStorage.getItem('loggedInUser');
-            if (storedUser) {
-                try {
-                    const user = JSON.parse(storedUser);
-                    if (user && user.email && user.name) {
-                        showMainContent(user);
-                    }
-                } catch (e) {
-                    // Invalid JSON, treat as not logged in
-                    localStorage.removeItem('loggedInUser');
+            if (!storedUser) return;
+            try {
+                const user = JSON.parse(storedUser);
+                if (user && user.email && user.name) {
+                    showMainContent(user);
                 }
+            } catch (e) {
+                localStorage.removeItem('loggedInUser');
             }
         }
 
-        // --- EVENT LISTENERS ---
-        dataTableBody.addEventListener('input', e => {
-            if (e.target.isContentEditable) {
-                e.target.closest('tr').classList.add('edited');
-                updateDataBtn.disabled = false;
-            }
-        });
-
-        dateFilter.addEventListener('change', fetchData);
-        searchInput.addEventListener('input', applyFiltersAndRender);
-        updateDataBtn.addEventListener('click', updateData);
-        sendOtpBtn.addEventListener('click', handleSendOtp);
-        verifyOtpBtn.addEventListener('click', handleVerifyOtp);
-        logoutBtn.addEventListener('click', handleLogout);
-        closeModalBtn.addEventListener('click', closeModal);
-        detailModal.addEventListener('click', (e) => {
-            if (e.target === detailModal) { // Close if clicking on the overlay
-                closeModal();
-            }
-        });
-
-        
-        incompleteDataBtn.addEventListener('click', () => {
-            if (currentMode === 'date') {
-                currentMode = 'incomplete';
-                dateFilterWrapper.classList.add('hidden');
-                searchInput.value = '';
-                fetchIncompleteData();
-                
-                incompleteDataBtn.classList.remove('bg-orange-500', 'hover:bg-orange-600');
-                incompleteDataBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-                incompleteDataBtn.querySelector('span').textContent = 'ត្រឡប់ទៅ Filter តាមកាលបរិច្ឆេទ';
-            } else {
-                currentMode = 'date';
-                dateFilterWrapper.classList.remove('hidden');
-                searchInput.value = '';
-                allData = [];
-                filteredData = [];
-                renderTable([]);
-                updateSummary([]);
-                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
-                
-                incompleteDataBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-                incompleteDataBtn.classList.add('bg-orange-500', 'hover:bg-orange-600');
-                incompleteDataBtn.querySelector('span').textContent = 'បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)';
-            }
-        });
-        
-        document.querySelectorAll('.sortable-header').forEach(header => {
-            header.addEventListener('click', () => {
-                const index = parseInt(header.dataset.colIndex, 10);
-                if (sortConfig.index === index) {
-                    sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortConfig.index = index;
-                    sortConfig.direction = 'asc';
+        // --- EVENT LISTENER SETUP ---
+        function setupEventListeners() {
+            DOM.dataTableBody.addEventListener('input', e => {
+                if (e.target.isContentEditable) {
+                    e.target.closest('tr').classList.add('edited');
+                    DOM.updateDataBtn.disabled = false;
                 }
-                applyFiltersAndRender();
             });
-        });
+
+            DOM.dateFilter.addEventListener('change', fetchData);
+            DOM.searchInput.addEventListener('input', applyFiltersAndRender);
+            DOM.updateDataBtn.addEventListener('click', updateData);
+            DOM.sendOtpBtn.addEventListener('click', handleSendOtp);
+            DOM.verifyOtpBtn.addEventListener('click', handleVerifyOtp);
+            DOM.logoutBtn.addEventListener('click', handleLogout);
+            
+            DOM.detailModal.addEventListener('click', (e) => {
+                if (e.target === DOM.detailModal || e.target === DOM.closeModalBtn || e.target.closest('button') === DOM.closeModalBtn) {
+                    DOM.detailModal.classList.add('hidden');
+                }
+            });
+
+            DOM.incompleteDataBtn.addEventListener('click', () => {
+                const btn = DOM.incompleteDataBtn;
+                const span = btn.querySelector('span');
+                if (state.currentMode === 'date') {
+                    state.currentMode = 'incomplete';
+                    DOM.dateFilterWrapper.classList.add('hidden');
+                    DOM.searchInput.value = '';
+                    fetchIncompleteData();
+                    
+                    btn.classList.replace('bg-orange-500', 'bg-blue-500');
+                    btn.classList.replace('hover:bg-orange-600', 'hover:bg-blue-600');
+                    span.textContent = 'ត្រឡប់ទៅ Filter តាមកալបរិច្ឆេទ';
+                } else {
+                    state.currentMode = 'date';
+                    DOM.dateFilterWrapper.classList.remove('hidden');
+                    state.allData = [];
+                    applyFiltersAndRender();
+                    
+                    if (DOM.dateFilter.value) {
+                        fetchData();
+                    } else {
+                        showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
+                    }
+                    
+                    btn.classList.replace('bg-blue-500', 'bg-orange-500');
+                    btn.classList.replace('hover:bg-blue-600', 'hover:bg-orange-600');
+                    span.textContent = 'បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)';
+                }
+            });
+            
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const index = parseInt(header.dataset.colIndex, 10);
+                    if (state.sortConfig.index === index) {
+                        state.sortConfig.direction = state.sortConfig.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        state.sortConfig.index = index;
+                        state.sortConfig.direction = 'asc';
+                    }
+                    applyFiltersAndRender();
+                });
+            });
+        }
         
         // --- INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
+            DOM.dateFilter.value = formatDateForAPI(new Date());
             populateUserDropdown();
+            setupEventListeners();
             checkLoginSession();
         });
     </script>
