@@ -173,23 +173,30 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-end gap-4 p-3 bg-gray-50 rounded-lg border">
-                    <div id="dateFilterWrapper" class="flex-grow min-w-[180px]">
+                <div id="filter-section" class="grid grid-cols-1 md:grid-cols-6 gap-4 p-3 bg-gray-50 rounded-lg border items-end">
+                    <div class="md:col-span-3">
                         <label for="dateFilter" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើសកាលបរិច្ឆេទ:</label>
                         <input type="date" id="dateFilter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                     <div class="flex-grow min-w-[200px]">
+                    <div class="md:col-span-2">
                         <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">ស្វែងរកទិន្នន័យ:</label>
                         <input type="text" id="searchInput" placeholder="វាយបញ្ចូលឈ្មោះ, ថ្នាក់, អត្តលេខ..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
                     </div>
-                    <div>
-                        <button id="updateDataBtn" class="w-full bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center gap-2" disabled>
-                             <div id="save-spinner" class="btn-spinner hidden"></div>
-                             <svg id="save-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
-                             <span id="save-text">រក្សាទុក</span>
+                    <div class="md:col-span-1">
+                        <button id="fetchDataBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                             <span>ស្វែងរក</span>
                         </button>
                     </div>
                 </div>
+            </div>
+            
+            <div class="flex justify-end mb-4">
+                 <button id="updateDataBtn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center gap-2" disabled>
+                    <div id="save-spinner" class="btn-spinner hidden"></div>
+                    <svg id="save-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
+                    <span id="save-text">រក្សាទុក</span>
+                 </button>
             </div>
 
             <div id="status" class="text-center my-4" aria-live="polite"></div>
@@ -266,7 +273,7 @@
         // ===================================================================================
         // !!! IMPORTANT !!! Please insert your Google Apps Script Web App URL here.
         // ===================================================================================
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzOdGJKkq_Wq5pUBr3242Jea6I8iM6ZrjM0ZeVoukw_cx9pf-Zxm7wM1WFQizc-HeWE/exec'; // <--- Insert your Web App URL here
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXxZ6HAarjfMp8Kh-XpP2GoP6XFZf3cpTyDWJr-uNGJst-hPoNftzzfHtd9B2KQszGmA/exec'; // <--- Insert your Web App URL here
 
         // --- USER CONFIGURATION ---
         const USERS = {
@@ -296,7 +303,8 @@
             logoutBtn: getEl('logout-btn'),
             loggedInUserSpan: getEl('logged-in-user'),
             dateFilter: getEl('dateFilter'),
-            dateFilterWrapper: getEl('dateFilterWrapper'),
+            filterSection: getEl('filter-section'),
+            fetchDataBtn: getEl('fetchDataBtn'),
             updateDataBtn: getEl('updateDataBtn'),
             dataTableBody: getEl('dataTableBody'),
             loader: getEl('loader'),
@@ -350,7 +358,7 @@
         
         function showStatus(message, isError = false) {
             DOM.statusDiv.textContent = message;
-            DOM.statusDiv.className = isError ? 'text-center my-4 text-red-600 font-bold' : 'text-center my-4 text-green-600 font-semibold';
+            DOM.statusDiv.className = isError ? 'text-center my-4 text-red-600 font-bold' : 'text-center my-4 text-gray-600';
         }
         
         function showLoginStatus(message, isError = false) {
@@ -359,7 +367,7 @@
         }
         
         function validateWebAppUrl() {
-            if (!WEB_APP_URL || WEB_APP_URL.length < 50 || WEB_APP_URL.includes("YOUR_WEB_APP_URL")) {
+            if (!WEB_APP_URL || WEB_APP_URL.length < 50 || !WEB_APP_URL.startsWith("https://script.google.com/")) {
                  showStatus('!!! សូមបញ្ជាក់៖ អ្នកត្រូវដាក់ Web App URL ដែលបាន Deploy ពី Google Apps Script របស់អ្នក នៅក្នុងកូដ JavaScript ជាមុនសិន ទើបកម្មវិធីនេះអាចដំណើរការបាន។', true);
                  return false;
             }
@@ -374,26 +382,37 @@
             return date.toLocaleDateString('en-GB', options).replace(/ /g, '-');
         }
 
-        function formatTimeForDisplay(dateStr) {
-            if (!dateStr) return '';
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return '';
-            // Format time as HH:mm:ss in 24-hour format
-            const options = {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            };
-            return date.toLocaleTimeString('en-GB', options);
-        }
-        
-        function formatDateForAPI(date) {
-            const d = new Date(date);
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+        function formatTimeForDisplay(value) {
+            // Handles empty, null, or undefined values
+            if (!value) return '';
+
+            // Handles time serial numbers from Google Sheets (e.g., 0.5 for 12:00 PM)
+            if (typeof value === 'number' && value >= 0 && value < 1) {
+                const totalSeconds = Math.round(value * 24 * 60 * 60);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                const pad = (num) => String(num).padStart(2, '0');
+                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            }
+            
+            // Handles standard ISO date strings or Date objects
+            const date = new Date(value);
+            // Check if it's a valid date object OR a string that can be parsed into a valid date and contains a colon (to identify it as time)
+            if (value instanceof Date || (typeof value === 'string' && !isNaN(date.getTime()) && value.includes(':'))) {
+                 if (!isNaN(date.getTime())) {
+                    const options = {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                    };
+                    return date.toLocaleTimeString('en-GB', options);
+                }
+            }
+            
+            // If it's not a parsable time format but is some other value (like text "Uptime"), display it directly.
+            return value.toString();
         }
         
         // --- DATA HANDLING & RENDERING ---
@@ -419,15 +438,15 @@
 
         async function fetchData() {
             if (!validateWebAppUrl() || state.currentMode !== 'date') return;
-            showLoader();
-            DOM.updateDataBtn.disabled = true;
-
+            
             const selectedDate = DOM.dateFilter.value;
             if (!selectedDate) {
-                hideLoader();
-                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ។', true);
+                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទជាមុនសិន។', true);
                 return;
             }
+            
+            showLoader();
+            DOM.updateDataBtn.disabled = true;
             
             try {
                 const data = await apiCall('getData', { date: selectedDate });
@@ -436,7 +455,7 @@
                 if (data.length === 0) {
                     showStatus(`រកមិនឃើញទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)} ទេ។`);
                 } else {
-                     showStatus(`រកឃើញ ${data.length} ទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)}`);
+                     DOM.statusDiv.textContent = ''; // Clear status on success
                 }
             } catch (error) {
                 showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យ: ${error.message}`, true);
@@ -458,7 +477,7 @@
                 if (data.length === 0) {
                     showStatus('រកមិនឃើញទិន្នន័យមិនពេញលេញណាមួយទេ។');
                 } else {
-                    showStatus(`រកឃើញ ${data.length} ទិន្នន័យមិនពេញលេញ`, false);
+                    showStatus(`រកឃើញ ${data.length} ទិន្នន័យមិនពេញលេញ`);
                 }
             } catch (error) {
                 showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យមិនពេញលេញ: ${error.message}`, true);
@@ -470,7 +489,7 @@
         function applyFiltersAndRender() {
             const searchTerm = DOM.searchInput.value.toLowerCase();
             state.filteredData = state.allData.filter(item => 
-                 searchTerm ? item.data.some(cell => cell && cell.toString().toLowerCase().includes(searchTerm)) : true
+                searchTerm ? item.data.some(cell => cell && cell.toString().toLowerCase().includes(searchTerm)) : true
             );
             
             applySorting();
@@ -499,9 +518,12 @@
 
         function renderTable(data) {
             DOM.dataTableBody.innerHTML = '';
-            if (data.length === 0) {
-                 DOM.dataTableBody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-gray-500">រកមិនឃើញទិន្នន័យទេ។</td></tr>`;
+            if (data.length === 0 && state.allData.length > 0) {
+                 DOM.dataTableBody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-gray-500">រកមិនឃើញទិន្នន័យដែលត្រូវនឹងការស្វែងរករបស់អ្នកទេ។</td></tr>`;
                  return;
+            }
+             if (data.length === 0) {
+                return; // Keep status message visible if no data was ever fetched
             }
 
             const fragment = document.createDocumentFragment();
@@ -763,11 +785,11 @@
             DOM.loginScreen.classList.add('hidden');
             DOM.mainContent.classList.remove('hidden');
             DOM.loggedInUserSpan.textContent = user.name;
-            if (validateWebAppUrl() && DOM.dateFilter.value) {
-                fetchData();
-            } else if (validateWebAppUrl()) {
-                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
-            }
+            
+            // MODIFIED: Do not fetch data automatically. Show instruction message.
+            showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ហើយចុចប៊ូតុង "ស្វែងរក" ដើម្បីទាញយកទិន្នន័យ។');
+            state.allData = []; // Clear previous data
+            applyFiltersAndRender(); // Render an empty table to clear previous results
         }
 
         function checkLoginSession() {
@@ -791,8 +813,10 @@
                     DOM.updateDataBtn.disabled = false;
                 }
             });
+            
+            // MODIFIED: Added click listener for the new fetch button
+            DOM.fetchDataBtn.addEventListener('click', fetchData);
 
-            DOM.dateFilter.addEventListener('change', fetchData);
             DOM.searchInput.addEventListener('input', applyFiltersAndRender);
             DOM.updateDataBtn.addEventListener('click', updateData);
             DOM.sendOtpBtn.addEventListener('click', handleSendOtp);
@@ -810,24 +834,20 @@
                 const span = btn.querySelector('span');
                 if (state.currentMode === 'date') {
                     state.currentMode = 'incomplete';
-                    DOM.dateFilterWrapper.classList.add('hidden');
+                    DOM.filterSection.classList.add('hidden');
                     DOM.searchInput.value = '';
                     fetchIncompleteData();
                     
                     btn.classList.replace('bg-orange-500', 'bg-blue-500');
                     btn.classList.replace('hover:bg-orange-600', 'hover:bg-blue-600');
-                    span.textContent = 'ត្រឡប់ទៅ Filter តាមកալបរិច្ឆេទ';
+                    span.textContent = 'ត្រឡប់ទៅ Filter តាមកាលបរិច្ឆេទ';
                 } else {
                     state.currentMode = 'date';
-                    DOM.dateFilterWrapper.classList.remove('hidden');
+                    DOM.filterSection.classList.remove('hidden');
                     state.allData = [];
                     applyFiltersAndRender();
                     
-                    if (DOM.dateFilter.value) {
-                        fetchData();
-                    } else {
-                        showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ដើម្បីបង្ហាញទិន្នន័យ។');
-                    }
+                    showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ហើយចុចប៊ូតុង "ស្វែងរក" ដើម្បីទាញយកទិន្នន័យ។');
                     
                     btn.classList.replace('bg-blue-500', 'bg-orange-500');
                     btn.classList.replace('hover:bg-blue-600', 'hover:bg-orange-600');
@@ -851,7 +871,6 @@
         
         // --- INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
-            DOM.dateFilter.value = formatDateForAPI(new Date());
             populateUserDropdown();
             setupEventListeners();
             checkLoginSession();
@@ -859,4 +878,5 @@
     </script>
 </body>
 </html>
+
 
