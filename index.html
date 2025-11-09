@@ -9,28 +9,52 @@
     <style>
         body {
             font-family: 'Noto Sans Khmer', sans-serif;
-            background-color: #f0f2f5;
+            background-color: #f3f4f6; /* gray-100 */
         }
         .font-koulen {
             font-family: 'Koulen', cursive;
         }
-        /* Style for editable cells */
-        [contenteditable="true"] {
+        
+        /* New Scrollbar Style */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Editable cells (Table & Card) */
+        .editable-cell {
             background-color: #fef9c3; /* yellow-100 */
             transition: background-color 0.3s ease;
+            outline: 2px solid transparent;
+            border-radius: 4px;
+            padding: 4px 6px;
         }
-        [contenteditable="true"]:focus {
-            outline: 2px solid #3b82f6; /* blue-500 */
+        .editable-cell:focus {
+            outline-color: #3b82f6; /* blue-500 */
             background-color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
         }
-        /* Style for rows that have been edited */
-        .edited { 
+        
+        /* Edited row or card */
+        tr.edited, .employee-card.edited { 
             background-color: #dbeafe !important; /* blue-100 */
         }
-        tr {
-            transition: background-color 0.2s ease-in-out;
+        tr.edited td {
+            font-weight: 500;
         }
-        /* Loader animation */
+
+        /* Loader */
         .loader {
             border: 5px solid #f3f3f3;
             border-top: 5px solid #3498db;
@@ -51,7 +75,8 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* Table header sorting styles */
+
+        /* Sortable header */
         .sortable-header { cursor: pointer; user-select: none; }
         .sortable-header:hover { background-color: #e5e7eb; }
         .sort-icon {
@@ -66,7 +91,7 @@
         .sort-icon.desc { transform: rotate(180deg); }
         
         /* Modal animation */
-        #detail-modal .modal-content {
+        #detail-modal .modal-content, #complete-dates-modal .modal-content {
             animation: slide-up 0.3s ease-out;
         }
         @keyframes slide-up {
@@ -74,7 +99,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Toast Notification styles */
+        /* Toast Notification */
         #toast-container {
             position: fixed;
             top: 20px;
@@ -94,6 +119,7 @@
             transform: translateY(-20px);
             transition: opacity 0.3s, transform 0.3s;
             border-left: 5px solid;
+            min-width: 250px;
         }
         .toast.show {
             opacity: 1;
@@ -101,109 +127,200 @@
         }
         .toast.success { border-color: #28a745; }
         .toast.error { border-color: #dc3545; }
+
+        /* Desktop Icon Button Style */
+        .icon-btn {
+            @apply p-2 rounded-lg text-gray-600 transition-all duration-200;
+        }
+        .icon-btn:hover {
+            @apply bg-gray-100 text-gray-900;
+        }
+        .icon-btn:disabled {
+            @apply text-gray-300 bg-transparent;
+        }
+        .icon-btn.save-btn {
+            @apply text-green-600;
+        }
+        .icon-btn.save-btn:hover {
+            @apply bg-green-50 text-green-700;
+        }
+        .icon-btn.save-btn:disabled {
+            @apply text-gray-300 bg-transparent;
+        }
+
+        /* Mobile Footer Nav Style (ICON ONLY) */
+        .footer-nav-btn {
+            /* Center the icon perfectly */
+            @apply flex flex-col items-center justify-center p-3 text-gray-600 rounded-lg transition-all duration-200;
+        }
+        .footer-nav-btn.active {
+            @apply text-blue-600;
+        }
+        .footer-nav-btn:disabled {
+            @apply text-gray-300;
+        }
+        .footer-nav-btn.save-btn {
+            @apply text-green-600;
+        }
+
     </style>
 </head>
 <body class="text-gray-800">
 
-    <!-- Toast container for notifications -->
+    <!-- Toast container -->
     <div id="toast-container"></div>
 
-    <!-- Login Screen -->
-    <div id="login-screen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm text-center">
-            <h2 class="text-2xl font-koulen text-blue-600 mb-2">សូមចូលប្រើប្រព័ន្ធ</h2>
-            <p class="text-gray-600 mb-6">ជ្រើសរើសគណនីរបស់អ្នកដើម្បីបន្ត</p>
-            
-            <div id="login-form">
-                <select id="user-select" class="w-full p-3 border border-gray-300 rounded-md mb-4 text-center">
-                    <option value="">-- ជ្រើសរើសឈ្មោះ --</option>
-                </select>
-                <button id="send-otp-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/></svg>
-                    <span id="send-otp-text">ផ្ញើលេខកូដ (OTP)</span>
+    <!-- NEW Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-3xl font-koulen text-blue-600 mb-6 text-center">ចូលប្រើប្រព័ន្ធ</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="username-input" class="block text-sm font-medium text-gray-700">ឈ្មោះអ្នកប្រើ</label>
+                    <input type="text" id="username-input" placeholder="ឧ. Daro" class="mt-1 w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="password-input" class="block text-sm font-medium text-gray-700">ពាក្យសម្ងាត់</label>
+                    <!-- Password container -->
+                    <div class="relative mt-1">
+                        <input type="password" id="password-input" placeholder="••••••••" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 pr-10">
+                        <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-blue-600">
+                            <!-- Eye Icon (Show) -->
+                            <svg id="eye-icon-show" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                            </svg>
+                            <!-- Eye Slash Icon (Hide) - Hidden by default -->
+                            <svg id="eye-icon-hide" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash hidden" viewBox="0 0 16 16">
+                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-1.272.12l1.391 1.39L8 6.5a2.5 2.5 0 0 1 3.32 2.87l1.328 1.328c.661-.44 1.21-.979 1.68-1.62z"/>
+                                <path d="M2.641 4.761A13 13 0 0 1 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.991.99a4 4 0 0 1-1.344.442c-.06.012-.119.025-.178.038a7 7 0 0 1-1.272-.12 13 13 0 0 1-1.66-2.043C4.12 11.332 5.88 10.168 8 10.168c.205 0 .406.01.604.028l1.328-1.328a2.5 2.5 0 0 1-3.32-2.87L5.5 7.113A13 13 0 0 1 2.641 4.76zM1 8s3 5.5 8 5.5a7 7 0 0 0 1.272-.12l-1.39-1.39A4 4 0 0 1 8 10.5a4 4 0 0 1-1.344-.442 1.5 1.5 0 0 1 .178-.038A7 7 0 0 1 8 9.832a13 13 0 0 1-1.66-2.043C4.12 6.668 5.88 5.5 8 5.5c.205 0 .406.01.604.028l-1.328 1.328a2.5 2.5 0 0 1-3.32 2.87z"/>
+                                <path d="m8.636 12.049-1.328-1.328c-.022.018-.044.036-.067.053-.066.05-.133.097-.2.143l-1.39 1.39A7 7 0 0 0 8 12.5c.716 0 1.39-.133 2.02-.36l.03-.007a4 4 0 0 1-1.414-.084zM10.5 7.113l-1.328-1.328c.022-.018.044-.036.067-.053.066-.05.133-.097.2-.143l1.39-1.39A7 7 0 0 1 8 3.5c-.716 0-1.39.133-2.02.36l-.03.007a4 4 0 0 1 1.414.084l1.328 1.328c.022.018.044.036.067.053.066.05.133.097.2.143z"/>
+                                <path d="M14 8a4 4 0 0 1-1.344 2.89A7 7 0 0 1 8 12.5a7 7 0 0 1-1.272-.12l1.39-1.39a2.5 2.5 0 0 0 3.32-2.87l1.328-1.328C13.867 6.61 14 7.284 14 8"/>
+                                <path d="M1.966 9.11A4 4 0 0 1 3.31 6.22A7 7 0 0 1 8 3.5a7 7 0 0 1 1.272.12l-1.39 1.39a2.5 2.5 0 0 0-3.32 2.87l-1.328 1.328C2.133 9.39 1.966 8.716 1.966 9.11z"/>
+                                <path d="M15.707 15.707L.293.293.293.293 1.414 1.414 1.414 1.414 14.586 14.586l1.121-1.121z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">រក្សាការចងចាំ</label>
+                    </div>
+                </div>
+                <button id="login-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-in-right" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0v-2z"/>
+                        <path fill-rule="evenodd" d="M11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                    </svg>
+                    <span>ចូលប្រើ</span>
                 </button>
+                <div id="login-status" class="text-center text-red-600 h-5 text-sm"></div>
             </div>
-
-            <div id="otp-form" class="hidden mt-4">
-                <p class="text-sm text-gray-500 mb-2">លេខកូដ OTP ត្រូវបានផ្ញើទៅកាន់ <b id="user-email-display"></b>។ សូមពិនិត្យប្រអប់សំបុត្រ។</p>
-                <input type="text" id="otp-input" placeholder="បញ្ចូលលេខកូដ OTP 6 ខ្ទង់" class="w-full p-3 border border-gray-300 rounded-md text-center tracking-[8px] text-lg font-koulen" maxlength="6">
-                <button id="verify-otp-btn" class="w-full mt-4 bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition duration-300">
-                    បញ្ជាក់ និងចូលប្រើ
-                </button>
-            </div>
-             <div id="login-status" class="mt-4 text-sm h-5" aria-live="polite"></div>
         </div>
     </div>
 
     <!-- Main Content (Hidden by default) -->
-    <div id="main-content" class="container mx-auto p-4 md:p-6 hidden">
-        <header class="bg-white shadow-md rounded-lg p-4 mb-6 flex justify-between items-center">
+    <div id="main-content" class="max-w-7xl mx-auto p-4 md:p-6 pb-24 md:pb-6 hidden">
+        <header class="bg-white shadow-lg rounded-xl p-4 mb-6 flex justify-between items-center">
             <h1 class="text-2xl md:text-3xl font-koulen text-blue-600 text-center flex-grow">ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យបុគ្គលិក (ឆ្លាតវៃ)</h1>
-            <div class="flex items-center gap-2">
-                 <span id="logged-in-user" class="text-sm text-gray-600 hidden md:inline"></span>
-                 <button id="logout-btn" title="ចាកចេញពីប្រព័ន្ធ" aria-label="Log Out" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition duration-300">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
-                </button>
-            </div>
+            <!-- NEW Mobile Logout Button -->
+            <button id="logoutBtn_mobile" title="ចាកចេញ" class="icon-btn md:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                    <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                </svg>
+            </button>
         </header>
 
-        <main class="bg-white shadow-md rounded-lg p-4">
-            <!-- Action Buttons -->
-            <div class="mb-4">
-                 <button id="incompleteDataBtn" class="w-full bg-orange-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-orange-600 transition duration-300 flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16"><path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/><path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/></svg>
-                     <span>បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)</span>
-                </button>
-            </div>
-            
-            <!-- Summary and Filters -->
-            <div class="mb-4 space-y-4">
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-center">
-                    <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg">
-                        <h3 class="text-sm font-bold text-blue-800">បុគ្គលិកសរុប</h3>
-                        <p id="total-employees" class="text-2xl font-koulen text-blue-600">0</p>
-                    </div>
-                    <div class="bg-pink-50 border border-pink-200 p-3 rounded-lg">
-                        <h3 class="text-sm font-bold text-pink-800">បុគ្គលិកស្ត្រី</h3>
-                        <p id="female-employees" class="text-2xl font-koulen text-pink-600">0</p>
-                    </div>
-                     <div class="bg-green-50 border border-green-200 p-3 rounded-lg col-span-2 md:col-span-1">
-                        <h3 class="text-sm font-bold text-green-800">បុគ្គលិកបុរស</h3>
-                        <p id="male-employees" class="text-2xl font-koulen text-green-600">0</p>
-                    </div>
+        <!-- "Main" Page (Filters, Summary) -->
+        <div id="page-main-view" class="space-y-6">
+            <!-- Top Controls (Desktop/Tablet Only) -->
+            <div class="hidden md:flex bg-white shadow-lg rounded-xl p-3 gap-2 justify-between items-center">
+                <!-- Left controls -->
+                <div class="flex gap-2">
+                    <button id="refreshDataBtn_desktop" title="ផ្ទុកទិន្នន័យឡើងវិញ" class="icon-btn">
+                        <div id="fetch-spinner_desktop" class="btn-spinner hidden"></div>
+                        <svg id="fetch-icon_desktop" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                    </button>
+                    <button id="incompleteDataBtn_desktop" title="ទិន្នន័យមិនពេញលេញ" class="icon-btn">
+                        <div id="incomplete-spinner_desktop" class="btn-spinner hidden"></div>
+                        <svg id="incomplete-icon_desktop" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16">
+                           <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/>
+                           <path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+                        </svg>
+                    </button>
+                    <button id="checkCompleteBtn_desktop" title="ពិនិត្យថ្ងៃដែលពេញលេញ" class="icon-btn">
+                        <div id="check-spinner_desktop" class="btn-spinner hidden"></div>
+                        <svg id="check-icon_desktop" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-all" viewBox="0 0 16 16">
+                            <path d="M8.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L2.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093L8.95 4.992a.252.252 0 0 1 .02-.022zm-.92 5.14.92.92a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 1 0-1.091-1.028L9.477 9.417l-.485-.486-.943 1.179z"/>
+                        </svg>
+                    </button>
                 </div>
+                <!-- Right controls -->
+                <div class="flex items-center gap-2"> <!-- Modified wrapper -->
+                    <button id="updateDataBtn_desktop" title="រក្សាទុកការកែប្រែ" class="icon-btn save-btn" disabled>
+                        <div id="save-spinner_desktop" class="btn-spinner hidden"></div>
+                        <svg id="save-icon_desktop" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16">
+                            <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/>
+                        </svg>
+                    </button>
+                    <!-- NEW Desktop Logout Button -->
+                    <button id="logoutBtn_desktop" title="ចាកចេញ" class="icon-btn">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-box-arrow-right" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                            <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
 
-                <div id="filter-section" class="grid grid-cols-1 md:grid-cols-6 gap-4 p-3 bg-gray-50 rounded-lg border items-end">
+            <!-- Filters -->
+            <div class="bg-white shadow-lg rounded-xl p-4">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                     <div class="md:col-span-3">
                         <label for="dateFilter" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើសកាលបរិច្ឆេទ:</label>
                         <input type="date" id="dateFilter" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                     </div>
-                    <div class="md:col-span-2">
-                        <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">ស្វែងរកទិន្នន័យ:</label>
+                    <div class="md:col-span-3">
+                        <label for="searchInput" class="block text-sm font-medium text-gray-700 mb-1">ស្វែងរកទិន្នន័យ (ក្នុងខែនេះ):</label>
                         <input type="text" id="searchInput" placeholder="វាយបញ្ចូលឈ្មោះ, ថ្នាក់, អត្តលេខ..." class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div class="md:col-span-1">
-                        <button id="fetchDataBtn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
-                             <span>ស្វែងរក</span>
-                        </button>
                     </div>
                 </div>
             </div>
             
-            <div class="flex justify-end mb-4">
-                 <button id="updateDataBtn" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300 flex items-center justify-center gap-2" disabled>
-                    <div id="save-spinner" class="btn-spinner hidden"></div>
-                    <svg id="save-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/></svg>
-                    <span id="save-text">រក្សាទុក</span>
-                 </button>
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-blue-500 text-white p-4 rounded-xl shadow-md">
+                    <h3 class="text-sm font-bold text-blue-100 uppercase">សរុប (ក្នុងថ្ងៃ)</h3>
+                    <p id="total-employees" class="text-3xl font-koulen">0</p>
+                </div>
+                <div class="bg-pink-500 text-white p-4 rounded-xl shadow-md">
+                    <h3 class="text-sm font-bold text-pink-100 uppercase">ស្ត្រី</h3>
+                    <p id="female-employees" class="text-3xl font-koulen">0</p>
+                </div>
+                <div class="bg-green-500 text-white p-4 rounded-xl shadow-md">
+                    <h3 class="text-sm font-bold text-green-100 uppercase">បុរស</h3>
+                    <p id="male-employees" class="text-3xl font-koulen">0</p>
+                </div>
+                <div class="bg-orange-500 text-white p-4 rounded-xl shadow-md">
+                    <h3 class="text-sm font-bold text-orange-100 uppercase">មិនពេញលេញ</h3>
+                    <p id="incomplete-count" class="text-3xl font-koulen">0</p>
+                </div>
             </div>
+        </div>
 
-            <div id="status" class="text-center my-4" aria-live="polite"></div>
+        <!-- "Data" Page (Table, Cards) - Hidden on mobile by default -->
+        <div id="data-display-area" class="bg-white shadow-lg rounded-xl overflow-hidden mt-6 md:mt-0 hidden md:block">
+            <div id="status" class="text-center p-4" aria-live="polite"></div>
             <div id="loader" class="hidden flex justify-center items-center my-8"><div class="loader"></div></div>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-white border border-gray-200">
+            
+            <!-- Table View (Desktop/Tablet) -->
+            <div id="table-container" class="hidden md:block overflow-x-auto">
+                <table class="min-w-full bg-white">
                     <thead class="bg-gray-200">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="0">#</th>
@@ -215,15 +332,65 @@
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="6">អត្តលេខ</th>
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="7">កាលបរិច្ឆេទ</th>
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider sortable-header" data-col-index="8">កាលវិភាគ</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចូល</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200">ម៉ោងចេញ</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200 sticky right-20 md:right-24 z-10">ម៉ោងចូល</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider bg-yellow-200 sticky right-0 z-10">ម៉ោងចេញ</th>
                         </tr>
                     </thead>
                     <tbody id="dataTableBody" class="divide-y divide-gray-200"></tbody>
                 </table>
             </div>
-        </main>
+
+            <!-- Card View (Mobile) -->
+            <div id="card-container" class="block md:hidden p-4 space-y-3">
+                <!-- Cards will be injected here -->
+            </div>
+            
+            <!-- Pagination (Mobile) -->
+            <div id="pagination-controls" class="block md:hidden flex justify-between items-center p-4 border-t border-gray-200">
+                <!-- Pagination controls will be injected here -->
+            </div>
+
+        </div>
     </div>
+
+    <!-- Mobile Footer Navigation (ICON ONLY) -->
+    <footer class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg grid grid-cols-5 z-30">
+        <!-- 1. Home -->
+        <button id="navBtn_home" title="ទំព័រដើម" class="footer-nav-btn active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16">
+                <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L8.707 1.5Z"/>
+            </svg>
+        </button>
+        <!-- 2. Data -->
+        <button id="navBtn_data" title="ទិន្នន័យ" class="footer-nav-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-card-list" viewBox="0 0 16 16">
+                <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/>
+                <path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8m0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0"/>
+            </svg>
+        </button>
+        <!-- 3. Incomplete -->
+        <button id="navBtn_incomplete" title="ទិន្នន័យមិនពេញលេញ" class="footer-nav-btn">
+             <div id="incomplete-spinner_mobile" class="btn-spinner hidden"></div>
+            <svg id="incomplete-icon_mobile" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-exclamation" viewBox="0 0 16 16">
+               <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1z"/>
+               <path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0m-3.5-2a.5.5 0 0 0-.5.5v1.5a.5.5 0 0 0 1 0V11a.5.5 0 0 0-.5-.5m0 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+            </svg>
+        </button>
+        <!-- 4. Check -->
+        <button id="navBtn_check" title="ពិនិត្យថ្ងៃដែលពេញលេញ" class="footer-nav-btn">
+            <div id="check-spinner_mobile" class="btn-spinner hidden"></div>
+            <svg id="check-icon_mobile" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-check-all" viewBox="0 0 16 16">
+                <path d="M8.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L2.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093L8.95 4.992a.252.252 0 0 1 .02-.022zm-.92 5.14.92.92a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 1 0-1.091-1.028L9.477 9.417l-.485-.486-.943 1.179z"/>
+            </svg>
+        </button>
+        <!-- 5. Save -->
+        <button id="navBtn_save" title="រក្សាទុកការកែប្រែ" class="footer-nav-btn save-btn" disabled>
+            <div id="save-spinner_mobile" class="btn-spinner hidden"></div>
+            <svg id="save-icon_mobile" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16">
+                <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v4.5h2a.5.5 0 0 1 .354.854l-2.5 2.5a.5.5 0 0 1-.708 0l-2.5-2.5A.5.5 0 0 1 5.5 6.5h2V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/>
+            </svg>
+        </button>
+    </footer>
 
     <!-- Employee Detail Modal -->
     <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-40">
@@ -267,157 +434,289 @@
             </div>
         </div>
     </div>
+    
+    <!-- NEW "Complete Dates" Modal -->
+    <div id="complete-dates-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-50">
+        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-5 border-b flex justify-between items-center bg-gray-50">
+                <h3 class="text-xl font-koulen text-cyan-700">ថ្ងៃដែលមានទិន្នន័យពេញលេញ (ខែនេះ)</h3>
+                <button id="close-complete-modal-btn" aria-label="Close modal" class="text-gray-400 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="complete-dates-body" class="p-6 max-h-[400px] overflow-y-auto">
+                <!-- Content will be injected by JS -->
+                <div class="flex justify-center items-center py-8">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <script>
         // ===================================================================================
         // !!! IMPORTANT !!! Please insert your Google Apps Script Web App URL here.
         // ===================================================================================
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXxZ6HAarjfMp8Kh-XpP2GoP6XFZf3cpTyDWJr-uNGJst-hPoNftzzfHtd9B2KQszGmA/exec'; // <--- Insert your Web App URL here
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyzx_nCvA5Y38708KF_EOTkjVTnCj9_GwmqMDV2LPHkY6SY42IGteV2ojOKkeLo4RB0/exec'; // <--- Insert your Web App URL here
 
-        // --- USER CONFIGURATION ---
-        const USERS = {
-            'darotrb0@gmail.com': 'MMK',
-            'bonchantha43@gmail.com': 'ប៊ន ចន្ថា',
-            'chhanonlork87@gmail.com': 'ឡោក ឆាណុន',
-            'roeunsreyneth2026@gmail.com': 'រឿន ស្រណែត',
-            'phonekh501@gmail.com': 'សយ គឹមសុដានី',
-            'thavry525354@gmail.com': 'ប៉ី ថាវរី',
-            'chanthaihin168@gmail.com': 'ហឹន ចាន់ថៃ'
-        };
+        // --- NEW LOGIN CONSTANTS ---
+        const CORRECT_USERNAME = 'Admin';
+        const CORRECT_PASSWORD = '4545mmk45';
 
         // --- DOM ELEMENT CACHING ---
         const getEl = (id) => document.getElementById(id);
         const DOM = {
-            loginScreen: getEl('login-screen'),
             mainContent: getEl('main-content'),
-            loginForm: getEl('login-form'),
-            otpForm: getEl('otp-form'),
-            userSelect: getEl('user-select'),
-            sendOtpBtn: getEl('send-otp-btn'),
-            sendOtpText: getEl('send-otp-text'),
-            verifyOtpBtn: getEl('verify-otp-btn'),
-            otpInput: getEl('otp-input'),
-            userEmailDisplay: getEl('user-email-display'),
-            loginStatus: getEl('login-status'),
-            logoutBtn: getEl('logout-btn'),
-            loggedInUserSpan: getEl('logged-in-user'),
+            pageMainView: getEl('page-main-view'),
+            dataDisplayArea: getEl('data-display-area'),
             dateFilter: getEl('dateFilter'),
-            filterSection: getEl('filter-section'),
-            fetchDataBtn: getEl('fetchDataBtn'),
-            updateDataBtn: getEl('updateDataBtn'),
+            
+            // NEW Login Elements
+            loginScreen: getEl('login-screen'),
+            loginBtn: getEl('login-btn'),
+            usernameInput: getEl('username-input'),
+            passwordInput: getEl('password-input'),
+            togglePassword: getEl('toggle-password'), // Password toggle
+            eyeIconShow: getEl('eye-icon-show'),     // Password toggle
+            eyeIconHide: getEl('eye-icon-hide'),     // Password toggle
+            rememberMe: getEl('remember-me'),
+            loginStatus: getEl('login-status'),
+            
+            // NEW Logout Buttons
+            logoutBtn_desktop: getEl('logoutBtn_desktop'),
+            logoutBtn_mobile: getEl('logoutBtn_mobile'),
+
+            // Desktop buttons
+            refreshDataBtn_desktop: getEl('refreshDataBtn_desktop'),
+            updateDataBtn_desktop: getEl('updateDataBtn_desktop'),
+            incompleteDataBtn_desktop: getEl('incompleteDataBtn_desktop'),
+            checkCompleteBtn_desktop: getEl('checkCompleteBtn_desktop'),
+            
+            // Mobile buttons (New 5-button layout)
+            navBtnHome: getEl('navBtn_home'),
+            navBtnData: getEl('navBtn_data'),
+            navBtnIncomplete: getEl('navBtn_incomplete'),
+            navBtnCheck: getEl('navBtn_check'),
+            navBtnSave: getEl('navBtn_save'),
+
+            // Spinners
+            spinners: {
+                fetch: [getEl('fetch-spinner_desktop')], // Mobile spinner is on data btn
+                save: [getEl('save-spinner_desktop'), getEl('save-spinner_mobile')],
+                incomplete: [getEl('incomplete-spinner_desktop'), getEl('incomplete-spinner_mobile')],
+                check: [getEl('check-spinner_desktop'), getEl('check-spinner_mobile')]
+            },
+            // Icons
+            icons: {
+                fetch: [getEl('fetch-icon_desktop')],
+                save: [getEl('save-icon_desktop'), getEl('save-icon_mobile')],
+                incomplete: [getEl('incomplete-icon_desktop'), getEl('incomplete-icon_mobile')],
+                check: [getEl('check-icon_desktop'), getEl('check-icon_mobile')]
+            },
+            
+            // Data Containers
             dataTableBody: getEl('dataTableBody'),
+            cardContainer: getEl('card-container'),
+            paginationControls: getEl('pagination-controls'),
+            
             loader: getEl('loader'),
             statusDiv: getEl('status'),
-            saveText: getEl('save-text'),
-            saveSpinner: getEl('save-spinner'),
-            saveIcon: getEl('save-icon'),
             searchInput: getEl('searchInput'),
-            incompleteDataBtn: getEl('incompleteDataBtn'),
+            
+            // Modals
             detailModal: getEl('detail-modal'),
             closeModalBtn: getEl('close-modal-btn'),
             employeePhoto: getEl('employee-photo'),
+            completeDatesModal: getEl('complete-dates-modal'),
+            closeCompleteModalBtn: getEl('close-complete-modal-btn'),
+            completeDatesBody: getEl('complete-dates-body'),
+
+            // Summary Cards
+            totalEmployees: getEl('total-employees'),
+            femaleEmployees: getEl('female-employees'),
+            maleEmployees: getEl('male-employees'),
+            incompleteCount: getEl('incomplete-count'),
         };
         
         // --- APPLICATION STATE ---
         const state = {
-            allData: [],
-            filteredData: [],
+            monthlyDataCache: new Map(), // Stores data by "YYYY-MM"
+            currentDayData: [], // Data for the selected day
+            filteredData: [],   // Data after search/sort
             sortConfig: { index: null, direction: 'asc' },
+            currentMonthYear: '', // e.g., "2025-11"
+            currentSelectedDate: '', // e.g., "2025-11-09"
             currentMode: 'date', // 'date' or 'incomplete'
-            otpCooldown: 0,
-            currentUser: null,
+            isLoading: false,
+            currentUser: { email: 'darotrb0@gmail.com', name: 'Admin' }, // Hardcode Admin
+            // Mobile Pagination
+            currentPage: 1,
+            itemsPerPage: 15,
+            touchStartX: 0,
+            touchEndX: 0,
+            // Mobile Page State
+            mobilePage: 'main' // 'main' or 'data'
         };
         
         // --- UTILITY & HELPER FUNCTIONS ---
         
-        /**
-         * Shows a toast notification.
-         * @param {string} message - The message to display.
-         * @param {string} type - 'success' or 'error'.
-         */
         function showToast(message, type = 'success') {
             const toastContainer = getEl('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
             toastContainer.appendChild(toast);
-
-            // Trigger reflow to enable animation
             setTimeout(() => toast.classList.add('show'), 10);
-
-            // Remove the toast after 4 seconds
             setTimeout(() => {
                 toast.classList.remove('show');
                 toast.addEventListener('transitionend', () => toast.remove());
             }, 4000);
         }
 
-        const showLoader = () => { DOM.loader.classList.remove('hidden'); DOM.statusDiv.textContent = ''; DOM.dataTableBody.innerHTML = ''; }
+        const showLoader = () => { DOM.loader.classList.remove('hidden'); DOM.statusDiv.textContent = ''; DOM.dataTableBody.innerHTML = ''; DOM.cardContainer.innerHTML = ''; }
         const hideLoader = () => DOM.loader.classList.add('hidden');
         
         function showStatus(message, isError = false) {
+            hideLoader();
             DOM.statusDiv.textContent = message;
-            DOM.statusDiv.className = isError ? 'text-center my-4 text-red-600 font-bold' : 'text-center my-4 text-gray-600';
-        }
-        
-        function showLoginStatus(message, isError = false) {
-            DOM.loginStatus.textContent = message;
-            DOM.loginStatus.className = isError ? 'mt-4 text-sm h-5 text-red-600' : 'mt-4 text-sm h-5 text-green-600';
+            DOM.statusDiv.className = isError ? 'text-center p-4 text-red-600 font-bold' : 'text-center p-4 text-gray-600';
         }
         
         function validateWebAppUrl() {
             if (!WEB_APP_URL || WEB_APP_URL.length < 50 || !WEB_APP_URL.startsWith("https://script.google.com/")) {
-                 showStatus('!!! សូមបញ្ជាក់៖ អ្នកត្រូវដាក់ Web App URL ដែលបាន Deploy ពី Google Apps Script របស់អ្នក នៅក្នុងកូដ JavaScript ជាមុនសិន ទើបកម្មវិធីនេះអាចដំណើរការបាន។', true);
-                 return false;
+                showStatus('!!! សូមបញ្ជាក់៖ អ្នកត្រូវដាក់ Web App URL ដែលបាន Deploy ពី Google Apps Script របស់អ្នក នៅក្នុងកូដ JavaScript ជាមុនសិន ទើបកម្មវិធីនេះអាចដំណើរការបាន។', true);
+                return false;
             }
             return true;
         }
 
+        /**
+         * ត្រឡប់កាលបរិច្ឆេទជា "YYYY-MM-DD" ពី Local Date
+         */
+        function getYYYYMMDD(date) {
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        /**
+         * ត្រឡប់ខែជា "YYYY-MM" ពី Local Date
+         */
+        function getYYYYMM(date) {
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            return `${yyyy}-${mm}`;
+        }
+
+        /**
+         * បង្ហាញកាលបរិច្ឆេទក្នុងតារាង
+         * Backend បញ្ជូនមកជា String (e.g., "9-Nov-2025")
+         */
         function formatDateForDisplay(dateStr) {
-            if (!dateStr) return '';
+            if (!dateStr || typeof dateStr !== 'string') return '';
+            
             const date = new Date(dateStr);
-            if (isNaN(date.getTime()) || date.getFullYear() < 1971) return ''; 
+            if (isNaN(date.getTime())) {
+                // If it's not a valid date string (like "ឈប់"), return as is.
+                return dateStr.trim();
+            }
+            
+            // If it is a valid date string (e.g., "9-Nov-2025"), format it.
             const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            // Use 'en-GB' for dd-MMM-yyyy format
             return date.toLocaleDateString('en-GB', options).replace(/ /g, '-');
         }
 
-        function formatTimeForDisplay(value) {
-            // Handles empty, null, or undefined values
-            if (!value) return '';
 
-            // Handles time serial numbers from Google Sheets (e.g., 0.5 for 12:00 PM)
-            if (typeof value === 'number' && value >= 0 && value < 1) {
-                const totalSeconds = Math.round(value * 24 * 60 * 60);
-                const hours = Math.floor(totalSeconds / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-                const pad = (num) => String(num).padStart(2, '0');
-                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        /**
+         * បង្ហាញម៉ោងក្នុងតារាង
+         * Backend បញ្ជូនមកជា String (e.g., "07:08" or "ឈប់")
+         */
+        function formatTimeForDisplay(value) {
+            // Backend ឥឡូវនេះបញ្ជូនមកជា String ជានិច្ច
+            // គ្រាន់តែ Trim ហើយបង្ហាញ
+            if (value === null || value === undefined) return '';
+            return value.toString().trim();
+        }
+
+        // --- BUTTON STATE MANAGEMENT ---
+        function setButtonLoading(buttonName, isLoading) {
+            const spinners = DOM.spinners[buttonName] || [];
+            const icons = DOM.icons[buttonName] || [];
+
+            // Desktop buttons
+            const desktopBtn = getEl(`${buttonName}Btn_desktop`);
+            if (desktopBtn) desktopBtn.disabled = isLoading;
+            spinners.forEach(sp => sp.classList.toggle('hidden', !isLoading));
+            icons.forEach(ic => ic.classList.toggle('hidden', isLoading));
+            
+            // Mobile buttons
+            if (buttonName === 'fetch') {
+                // Fetch maps to 'data' button spinner
+                getEl('navBtn_data').disabled = isLoading;
+                // We don't have a spinner on navBtn_data, maybe we should add one?
+            } else {
+                const mobileBtn = getEl(`navBtn_${buttonName}`);
+                if (mobileBtn) mobileBtn.disabled = isLoading;
             }
             
-            // Handles standard ISO date strings or Date objects
-            const date = new Date(value);
-            // Check if it's a valid date object OR a string that can be parsed into a valid date and contains a colon (to identify it as time)
-            if (value instanceof Date || (typeof value === 'string' && !isNaN(date.getTime()) && value.includes(':'))) {
-                 if (!isNaN(date.getTime())) {
-                    const options = {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false
-                    };
-                    return date.toLocaleTimeString('en-GB', options);
-                }
+            // Special case for incomplete count
+            if (buttonName === 'incomplete') {
+                DOM.incompleteCount.classList.toggle('hidden', isLoading);
             }
-            
-            // If it's not a parsable time format but is some other value (like text "Uptime"), display it directly.
-            return value.toString();
         }
         
+        function setSaveButtonDisabled(isDisabled) {
+            DOM.updateDataBtn_desktop.disabled = isDisabled;
+            DOM.navBtnSave.disabled = isDisabled;
+        }
+        
+        // --- MOBILE PAGE/NAV MANAGEMENT ---
+        function showMobilePage(pageName) { // 'main' or 'data'
+            state.mobilePage = pageName;
+            if (pageName === 'main') {
+                DOM.pageMainView.classList.remove('hidden');
+                DOM.dataDisplayArea.classList.add('hidden');
+                DOM.navBtnHome.classList.add('active');
+                DOM.navBtnData.classList.remove('active');
+            } else { // 'data'
+                DOM.pageMainView.classList.add('hidden');
+                DOM.dataDisplayArea.classList.remove('hidden', 'md:block'); // Show it
+                DOM.navBtnHome.classList.remove('active');
+                DOM.navBtnData.classList.add('active');
+            }
+            // Desktop is unaffected, CSS handles hiding
+            DOM.pageMainView.classList.add('md:block');
+            DOM.dataDisplayArea.classList.add('md:block');
+        }
+        
+        function updateActiveNav(mode) { // 'date' or 'incomplete'
+             if (mode === 'date') {
+                 DOM.incompleteDataBtn_desktop.classList.remove('text-blue-600', 'bg-blue-50');
+                 DOM.navBtnIncomplete.classList.remove('active');
+                 // Don't set refresh to active, Home or Data is active
+             } else { // 'incomplete'
+                 DOM.incompleteDataBtn_desktop.classList.add('text-blue-600', 'bg-blue-50');
+                 DOM.navBtnIncomplete.classList.add('active');
+                 // Deactivate home/data
+                 DOM.navBtnHome.classList.remove('active');
+                 DOM.navBtnData.classList.remove('active');
+             }
+        }
+
         // --- DATA HANDLING & RENDERING ---
 
-        async function apiCall(action, params = {}) {
+        async function apiCall(action, params = {}, buttonName = 'refresh') {
+            if (state.isLoading) return; 
+            state.isLoading = true;
+            if (buttonName !== 'none') {
+                setButtonLoading(buttonName, true);
+            }
+
             const url = new URL(WEB_APP_URL);
             url.searchParams.append('action', action);
             for (const key in params) {
@@ -428,85 +727,168 @@
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
                 const data = await response.json();
+                
                 if (data.error) throw new Error(data.error);
+                if (!Array.isArray(data) && (action === 'getData' || action === 'getIncompleteData' || action === 'getCompleteDates')) {
+                   throw new Error("ទិន្នន័យដែលទទួលបានមិនត្រឹមត្រូវ។");
+                }
+                
                 return data;
             } catch (error) {
                 console.error(`API Call Error (${action}):`, error);
+                showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យ: ${error.message}`, true);
                 throw error; // Re-throw for specific handlers
+            } finally {
+                state.isLoading = false;
+                if (buttonName !== 'none') {
+                    setButtonLoading(buttonName, false);
+                }
             }
         }
 
-        async function fetchData() {
-            if (!validateWebAppUrl() || state.currentMode !== 'date') return;
-            
-            const selectedDate = DOM.dateFilter.value;
+        async function handleDateChange(forceRefresh = false) {
+            const selectedDate = DOM.dateFilter.value; // "YYYY-MM-DD"
             if (!selectedDate) {
-                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទជាមុនសិន។', true);
+                showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ។', true);
+                return;
+            }
+
+            state.currentSelectedDate = selectedDate;
+            const parts = selectedDate.split('-').map(Number);
+            // ប្រើ new Date() ធម្មតា ព្រោះ YYYY-MM-DD នឹងត្រូវបកស្រាយជា Local time
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]); 
+            const monthYear = getYYYYMM(dateObj); // "YYYY-MM"
+
+            if (forceRefresh || !state.monthlyDataCache.has(monthYear)) {
+                showLoader();
+                setSaveButtonDisabled(true);
+                
+                try {
+                    // *** Data from backend is { rowIndex, data (string[]), dateObj (UTC Date) } ***
+                    const data = await apiCall('getData', { monthYear: monthYear }, 'fetch');
+                    state.monthlyDataCache.set(monthYear, data); 
+                    state.currentMonthYear = monthYear;
+                    
+                    if (forceRefresh) {
+                        showToast(`បានផ្ទុកទិន្នន័យថ្មីសម្រាប់ខែ ${monthYear}`, 'success');
+                    }
+                } catch (error) {
+                    hideLoader();
+                    showStatus(`មិនអាចផ្ទុកទិន្នន័យសម្រាប់ខែ ${monthYear}: ${error.message}`, true);
+                    return; 
+                }
+            }
+            
+            filterDataForDay(selectedDate);
+            applyFiltersAndRender();
+        }
+
+        function filterDataForDay(selectedDate) { // selectedDate = "YYYY-MM-DD"
+            const monthYear = selectedDate.substring(0, 7); // "YYYY-MM"
+            const monthlyData = state.monthlyDataCache.get(monthYear);
+
+            if (!monthlyData) {
+                state.currentDayData = [];
                 return;
             }
             
-            showLoader();
-            DOM.updateDataBtn.disabled = true;
+            const parts = selectedDate.split('-').map(Number);
+            const targetDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
             
-            try {
-                const data = await apiCall('getData', { date: selectedDate });
-                state.allData = data;
-                applyFiltersAndRender();
-                if (data.length === 0) {
-                    showStatus(`រកមិនឃើញទិន្នន័យសម្រាប់ថ្ងៃទី ${formatDateForDisplay(selectedDate)} ទេ។`);
-                } else {
-                     DOM.statusDiv.textContent = ''; // Clear status on success
-                }
-            } catch (error) {
-                showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យ: ${error.message}`, true);
-            } finally {
-                hideLoader();
+            state.currentDayData = monthlyData.filter(item => {
+                // item.dateObj គឺជា UTC Date object ពី backend
+                const itemDate = item.dateObj ? new Date(item.dateObj) : null; 
+                if (!itemDate || isNaN(itemDate.getTime())) return false;
+                
+                return itemDate.getUTCFullYear() === targetDate.getUTCFullYear() &&
+                       itemDate.getUTCMonth() === targetDate.getUTCMonth() &&
+                       itemDate.getUTCDate() === targetDate.getUTCDate();
+            });
+
+            if (state.currentDayData.length === 0) {
+                // បង្កើត Local Date សម្រាប់បង្ហាញ
+                const displayDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                const dateString = displayDate.toLocaleDateString('km-KH', { day: '2-digit', month: 'short', year: 'numeric' });
+                showStatus(`រកមិនឃើញទិន្នន័យសម្រាប់ថ្ងៃទី ${dateString} ទេ។`);
+            } else {
+                showStatus('', false); // Clear status
             }
         }
 
         async function fetchIncompleteData() {
-            if (!validateWebAppUrl()) return;
+            if (state.isLoading) return;
+            state.currentMode = 'incomplete';
+            updateActiveNav('incomplete');
             showLoader();
-            DOM.updateDataBtn.disabled = true;
-
+            setSaveButtonDisabled(true);
+            
             try {
-                const data = await apiCall('getIncompleteData');
-                data.sort((a, b) => (new Date(b.data[7])) - (new Date(a.data[7]))); // Sort by date desc
-                state.allData = data;
-                applyFiltersAndRender();
-                if (data.length === 0) {
-                    showStatus('រកមិនឃើញទិន្នន័យមិនពេញលេញណាមួយទេ។');
+                // *** Data from backend is { rowIndex, data (string[]), dateObj (UTC Date) } ***
+                const data = await apiCall('getIncompleteData', {}, 'incomplete'); 
+                state.currentDayData = data;
+                applyFiltersAndRender(); 
+                
+                if (state.currentDayData.length === 0) {
+                    showStatus('រកមិនឃើញទិន្នន័យមិនពេញលេញ (សម្រាប់ខែបច្ចុប្បន្ន) ទេ។');
                 } else {
-                    showStatus(`រកឃើញ ${data.length} ទិន្នន័យមិនពេញលេញ`);
+                    showStatus(`រកឃើញ ${state.currentDayData.length} ទិន្នន័យមិនពេញលេញ (ខែបច្ចុប្បន្ន)`);
                 }
+                DOM.incompleteCount.textContent = state.currentDayData.length;
+                showMobilePage('data'); // Switch to data page on mobile
             } catch (error) {
-                showStatus(`មានបញ្ហាក្នុងការទាញទិន្នន័យមិនពេញលេញ: ${error.message}`, true);
+                showStatus(`មានបញ្ហាទាញទិន្នន័យមិនពេញលេញ: ${error.message}`, true);
+                goBackToDateMode(); // Revert on error
             } finally {
                 hideLoader();
             }
         }
+        
+        function goBackToDateMode() {
+            state.currentMode = 'date';
+            updateActiveNav('date'); // 'date' mode maps to 'home' or 'data' nav
+            showMobilePage(state.mobilePage); // Go back to whichever page was active
+            
+            filterDataForDay(state.currentSelectedDate);
+            applyFiltersAndRender();
+        }
 
         function applyFiltersAndRender() {
+            if (!DOM.dataTableBody) return; 
+
             const searchTerm = DOM.searchInput.value.toLowerCase();
-            state.filteredData = state.allData.filter(item => 
+            
+            state.filteredData = state.currentDayData.filter(item => 
+                // item.data គឺជា array នៃ strings ពី backend
                 searchTerm ? item.data.some(cell => cell && cell.toString().toLowerCase().includes(searchTerm)) : true
             );
             
             applySorting();
-            renderTable(state.filteredData);
-            updateSummary(state.filteredData);
+            
+            // Render Both Views. CSS will hide the inactive one.
+            renderTableView(state.filteredData);
+            renderCardView(state.filteredData); // This resets page to 1
+            
+            if (state.currentMode === 'date') {
+                updateSummary(state.filteredData);
+                DOM.incompleteCount.textContent = '0'; // Reset incomplete count in date mode
+            } else {
+                 DOM.incompleteCount.textContent = state.filteredData.length;
+                 updateSummary([]); // Clear summary cards
+            }
         }
         
         function applySorting() {
             if (state.sortConfig.index === null) return;
             
             state.filteredData.sort((a, b) => {
+                // a.data និង b.data គឺជា arrays នៃ strings
                 const valA = a.data[state.sortConfig.index] || '';
                 const valB = b.data[state.sortConfig.index] || '';
                 
-                if (state.sortConfig.index === 7) { // Date column
-                    const dateA = new Date(valA).getTime() || 0;
-                    const dateB = new Date(valB).getTime() || 0;
+                if (state.sortConfig.index === 7) { 
+                    // ប្រើ dateObj សម្រាប់ sort
+                    const dateA = a.dateObj ? new Date(a.dateObj).getTime() : 0;
+                    const dateB = b.dateObj ? new Date(b.dateObj).getTime() : 0;
                     return state.sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
                 }
 
@@ -516,14 +898,15 @@
             updateSortIcons();
         }
 
-        function renderTable(data) {
+        // --- TABLE VIEW RENDER (Desktop) ---
+        function renderTableView(data) {
             DOM.dataTableBody.innerHTML = '';
-            if (data.length === 0 && state.allData.length > 0) {
-                 DOM.dataTableBody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-gray-500">រកមិនឃើញទិន្នន័យដែលត្រូវនឹងការស្វែងរករបស់អ្នកទេ។</td></tr>`;
+            
+            if (data.length === 0) {
+                 if (state.currentDayData.length > 0) {
+                    DOM.dataTableBody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-gray-500">រកមិនឃើញទិន្នន័យដែលត្រូវនឹងការស្វែងរករបស់អ្នកទេ។</td></tr>`;
+                 }
                  return;
-            }
-             if (data.length === 0) {
-                return; // Keep status message visible if no data was ever fetched
             }
 
             const fragment = document.createDocumentFragment();
@@ -532,13 +915,18 @@
                     const date = formatDateForDisplay(item.data[7]) || 'មិនមានកាលបរិច្ឆេទ';
                     if (!acc[date]) acc[date] = [];
                     acc[date].push(item);
-                    return acc;
                 }, {});
-
-                for (const date in groupedData) {
+                // Sort by dateObj
+                const sortedDates = Object.keys(groupedData).sort((a, b) => {
+                    const dateA = groupedData[a][0]?.dateObj ? new Date(groupedData[a][0].dateObj).getTime() : 0;
+                    const dateB = groupedData[b][0]?.dateObj ? new Date(groupedData[b][0].dateObj).getTime() : 0;
+                    return dateB - dateA; // Descending
+                });
+                
+                for (const date of sortedDates) {
                     const itemsForDate = groupedData[date];
                     const groupRow = document.createElement('tr');
-                    groupRow.className = 'bg-yellow-300 font-bold sticky top-0'; // Sticky header for date group
+                    groupRow.className = 'bg-yellow-300 font-bold sticky top-0 z-10';
                     groupRow.innerHTML = `<td colspan="11" class="px-4 py-2 text-gray-800">កាលបរិច្ឆេទ: ${date} (សរុប: ${itemsForDate.length})</td>`;
                     fragment.appendChild(groupRow);
                     itemsForDate.forEach(item => fragment.appendChild(createRowElement(item)));
@@ -550,16 +938,16 @@
         }
         
         function createRowElement(item) {
-            const isITSupport = (item.data[3] || '').trim().toLowerCase() === 'it support';
+            // item.data គឺជា array នៃ strings
+            const isITSupport = (item.data[1] || '').trim().toLowerCase() === 'it support';
             const isAdmin = state.currentUser && state.currentUser.email === 'darotrb0@gmail.com';
-
             const canEditThisRow = !isITSupport || isAdmin;
 
             const editableAttribute = canEditThisRow ? 'contenteditable="true"' : '';
             const nonEditableClass = canEditThisRow ? '' : 'bg-gray-200 text-gray-500 cursor-not-allowed';
             
             const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50 cursor-pointer';
+            row.className = 'hover:bg-gray-50'; // Removed 'cursor-pointer'
             row.dataset.rowIndex = item.rowIndex; 
 
             row.innerHTML = `
@@ -567,95 +955,273 @@
                 <td class="px-4 py-2 border-b text-sm">${item.data[1] || ''}</td>
                 <td class="px-4 py-2 border-b text-sm">${item.data[2] || ''}</td>
                 <td class="px-4 py-2 border-b text-sm">${item.data[3] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm">${item.data[4] || ''}</td>
+                <td class="px-4 py-2 border-b text-sm modal-trigger cursor-pointer text-blue-600 hover:underline">${item.data[4] || ''}</td>
                 <td class="px-4 py-2 border-b text-sm">${item.data[5] || ''}</td>
                 <td class="px-4 py-2 border-b text-sm">${item.data[6] || ''}</td>
                 <td class="px-4 py-2 border-b text-sm">${formatDateForDisplay(item.data[7])}</td>
                 <td class="px-4 py-2 border-b text-sm">${item.data[8] || ''}</td>
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="J">${formatTimeForDisplay(item.data[9])}</td>
-                <td class="px-4 py-2 border-b text-sm ${nonEditableClass}" ${editableAttribute} data-col="K">${formatTimeForDisplay(item.data[10])}</td>
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass} sticky right-20 md:right-24 z-0 bg-yellow-50" ${editableAttribute} data-col="J">${formatTimeForDisplay(item.data[9])}</td>
+                <td class="px-4 py-2 border-b text-sm ${nonEditableClass} sticky right-0 z-0 bg-yellow-50" ${editableAttribute} data-col="K">${formatTimeForDisplay(item.data[10])}</td>
             `;
+            
+            // Add hover effect for sticky columns
+            row.addEventListener('mouseenter', () => {
+                if (canEditThisRow) {
+                    row.cells[9].classList.replace('bg-yellow-50', 'bg-yellow-100');
+                    row.cells[10].classList.replace('bg-yellow-50', 'bg-yellow-100');
+                }
+            });
+            row.addEventListener('mouseleave', () => {
+                if (canEditThisRow) {
+                    row.cells[9].classList.replace('bg-yellow-100', 'bg-yellow-50');
+                    row.cells[10].classList.replace('bg-yellow-100', 'bg-yellow-50');
+                }
+            });
 
-            row.addEventListener('click', (e) => {
-                if (e.target.isContentEditable) return;
+            // Open modal only when clicking the name
+            row.querySelector('.modal-trigger').addEventListener('click', () => {
                 openModal(item.data);
             });
             return row;
         }
 
+        // --- CARD VIEW RENDER (Mobile) ---
+        function renderCardView(data) {
+            state.currentPage = 1; // Reset to page 1 on every re-render
+            paginateAndRenderCards(data);
+        }
+        
+        function paginateAndRenderCards(data) {
+            DOM.cardContainer.innerHTML = '';
+            DOM.paginationControls.innerHTML = '';
+            
+            if (data.length === 0) return; // No data, do nothing
+
+            const totalPages = Math.ceil(data.length / state.itemsPerPage);
+            if (state.currentPage > totalPages) state.currentPage = totalPages;
+            if (state.currentPage < 1) state.currentPage = 1;
+
+            const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+            const endIndex = state.currentPage * state.itemsPerPage;
+            const paginatedData = data.slice(startIndex, endIndex);
+
+            const fragment = document.createDocumentFragment();
+            paginatedData.forEach(item => fragment.appendChild(createCardElement(item)));
+            DOM.cardContainer.appendChild(fragment);
+
+            // Render pagination controls
+            DOM.paginationControls.innerHTML = `
+                <button id="prevPageBtn" class="icon-btn p-3" ${state.currentPage === 1 ? 'disabled' : ''}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-chevron-left" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                </button>
+                <span class="text-sm font-medium text-gray-700">
+                    ទំព័រ ${state.currentPage} / ${totalPages} (សរុប: ${data.length})
+                </span>
+                <button id="nextPageBtn" class="icon-btn p-3" ${state.currentPage === totalPages ? 'disabled' : ''}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            `;
+
+            // Add listeners to new pagination buttons
+            getEl('prevPageBtn').addEventListener('click', prevPage);
+            getEl('nextPageBtn').addEventListener('click', nextPage);
+        }
+
+        function createCardElement(item) {
+            // item.data គឺជា array នៃ strings
+            const isITSupport = (item.data[1] || '').trim().toLowerCase() === 'it support';
+            const isAdmin = state.currentUser && state.currentUser.email === 'darotrb0@gmail.com';
+            const canEditThisRow = !isITSupport || isAdmin;
+
+            const editableAttribute = canEditThisRow ? 'contenteditable="true"' : '';
+            const nonEditableClass = canEditThisRow ? '' : 'cursor-not-allowed opacity-60';
+
+            const card = document.createElement('div');
+            card.className = 'employee-card bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50';
+            card.dataset.rowIndex = item.rowIndex;
+            
+            const timeHTML = `
+                <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500">ម៉ោងចូល</label>
+                        <div class="editable-cell w-full text-center p-2 text-lg ${nonEditableClass}" ${editableAttribute} data-col="J">${formatTimeForDisplay(item.data[9])}</div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500">ម៉ោងចេញ</label>
+                        <div class="editable-cell w-full text-center p-2 text-lg ${nonEditableClass}" ${editableAttribute} data-col="K">${formatTimeForDisplay(item.data[10])}</div>
+                    </div>
+                </div>
+            `;
+
+            card.innerHTML = `
+                <div class="p-4 modal-trigger">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-lg font-bold text-blue-600">${item.data[4] || ''}</h4>
+                            <p class="text-sm text-gray-600">${item.data[3] || ''}</p>
+                        </div>
+                        <span class="text-sm font-koulen text-gray-500">#${item.data[6] || ''}</span>
+                    </div>
+                    <div class="mt-2 text-sm text-gray-500">
+                        <span>${item.data[1] || ''} / ${item.data[2] || ''}</span>
+                        <span class="mx-1">·</span>
+                        <span>${formatDateForDisplay(item.data[7])}</span>
+                    </div>
+                </div>
+                ${timeHTML}
+            `;
+            
+            // Stop propagation on editable cells to prevent modal click
+            card.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.addEventListener('click', (e) => e.stopPropagation());
+            });
+            
+            // Add modal listener to the modal-trigger part
+            card.querySelector('.modal-trigger').addEventListener('click', () => {
+                openModal(item.data);
+            });
+
+            return card;
+        }
+
+        // --- PAGINATION & SWIPE HANDLERS ---
+        function nextPage() {
+            const totalPages = Math.ceil(state.filteredData.length / state.itemsPerPage);
+            if (state.currentPage < totalPages) {
+                state.currentPage++;
+                paginateAndRenderCards(state.filteredData);
+            }
+        }
+
+        function prevPage() {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                paginateAndRenderCards(state.filteredData);
+            }
+        }
+        
+        function handleSwipe() {
+            if (state.touchEndX < state.touchStartX - 50) { // Swiped left
+                nextPage();
+            }
+            if (state.touchEndX > state.touchStartX + 50) { // Swiped right
+                prevPage();
+            }
+        }
+
+        // --- COMMON FUNCTIONS ---
         function updateSummary(data) {
             const total = data.length;
             const females = data.filter(item => item.data[5] === 'ស្រី').length;
-            getEl('total-employees').textContent = total;
-            getEl('female-employees').textContent = females;
-            getEl('male-employees').textContent = total - females;
+            DOM.totalEmployees.textContent = total;
+            DOM.femaleEmployees.textContent = females;
+            DOM.maleEmployees.textContent = total - females;
         }
         
         function updateSortIcons() {
              document.querySelectorAll('.sortable-header').forEach(header => {
-                const icon = header.querySelector('.sort-icon');
-                if(icon) icon.remove();
-                
-                const colIndex = parseInt(header.dataset.colIndex, 10);
-                if (state.sortConfig.index === colIndex) {
-                    header.classList.add('sorted');
-                    const newIcon = document.createElement('span');
-                    newIcon.className = 'sort-icon';
-                    newIcon.innerHTML = '▲';
-                    if (state.sortConfig.direction === 'desc') newIcon.classList.add('desc');
-                    header.appendChild(newIcon);
-                } else {
-                    header.classList.remove('sorted');
-                }
-            });
+                 const icon = header.querySelector('.sort-icon');
+                 if(icon) icon.remove();
+                 
+                 const colIndex = parseInt(header.dataset.colIndex, 10);
+                 if (state.sortConfig.index === colIndex) {
+                     header.classList.add('sorted');
+                     const newIcon = document.createElement('span');
+                     newIcon.className = 'sort-icon';
+                     newIcon.innerHTML = '▲';
+                     if (state.sortConfig.direction === 'desc') newIcon.classList.add('desc');
+                     header.appendChild(newIcon);
+                 } else {
+                     header.classList.remove('sorted');
+                 }
+             });
         }
 
         async function updateData() {
-            const editedRows = document.querySelectorAll('tr.edited');
-            if (editedRows.length === 0) {
+            const editedElements = document.querySelectorAll('.edited');
+            if (editedElements.length === 0) {
                 showToast('មិនមានការកែប្រែដើម្បីរក្សាទុកទេ។', 'error');
                 return;
             }
-            const updates = Array.from(editedRows).map(row => ({
-                rowIndex: row.dataset.rowIndex,
-                checkIn: row.cells[9].textContent.trim(),
-                checkOut: row.cells[10].textContent.trim()
-            }));
 
-            DOM.updateDataBtn.disabled = true;
-            DOM.saveText.textContent = 'កំពុងរក្សាទុក';
-            DOM.saveSpinner.classList.remove('hidden');
-            DOM.saveIcon.classList.add('hidden');
+            const updates = [];
+            const processedRowIndices = new Set();
+
+            editedElements.forEach(el => {
+                const rowIndex = el.dataset.rowIndex;
+                if (processedRowIndices.has(rowIndex)) return; // Already processed this row/card
+
+                let checkIn, checkOut;
+                // Find the corresponding element (card or row)
+                const row = document.querySelector(`tr[data-row-index="${rowIndex}"]`);
+                const card = document.querySelector(`.employee-card[data-row-index="${rowIndex}"]`);
+
+                if (row) {
+                    checkIn = row.cells[9].textContent.trim();
+                    checkOut = row.cells[10].textContent.trim();
+                } else if (card) {
+                    checkIn = card.querySelector('[data-col="J"]').textContent.trim();
+                    checkOut = card.querySelector('[data-col="K"]').textContent.trim();
+                }
+
+                updates.push({ rowIndex, checkIn, checkOut });
+                processedRowIndices.add(rowIndex);
+            });
+
+
+            setButtonLoading('save', true);
             
             try {
+                let monthYearToClear = state.currentMonthYear;
+                if (state.currentMode === 'incomplete') {
+                    monthYearToClear = getYYYYMM(new Date());
+                }
+
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ updates })
+                    body: JSON.stringify({ 
+                        updates, 
+                        user: state.currentUser,
+                        monthYear: monthYearToClear 
+                    })
                 });
                 const result = await response.json();
                 if (result.status !== 'success') throw new Error(result.message || 'Unknown error');
                 
                 showToast(`បានរក្សាទុក ${result.updatedRows} records ដោយជោគជ័យ!`, 'success');
                 
+                if (monthYearToClear) {
+                    state.monthlyDataCache.delete(monthYearToClear);
+                }
+
                 if (state.currentMode === 'incomplete') {
                     const completedRowIndices = updates
                         .filter(u => u.checkIn && u.checkOut)
                         .map(u => u.rowIndex.toString());
                     if (completedRowIndices.length > 0) {
-                        state.allData = state.allData.filter(item => !completedRowIndices.includes(item.rowIndex.toString()));
+                        state.currentDayData = state.currentDayData.filter(item => !completedRowIndices.includes(item.rowIndex.toString()));
                         applyFiltersAndRender();
                     }
+                } else {
+                    await handleDateChange(true); // Fetch fresh data
                 }
-                editedRows.forEach(row => row.classList.remove('edited'));
+                
+                editedElements.forEach(el => el.classList.remove('edited'));
+                setSaveButtonDisabled(true); // Disable save button again
 
             } catch (error) {
                 showToast(`មានបញ្ហាក្នុងការរក្សាទុក: ${error.message}`, 'error');
             } finally {
-                 DOM.updateDataBtn.disabled = document.querySelectorAll('tr.edited').length === 0;
-                 DOM.saveText.textContent = 'រក្សាទុក';
-                 DOM.saveSpinner.classList.add('hidden');
-                 DOM.saveIcon.classList.remove('hidden');
+                 setButtonLoading('save', false);
+                 // Re-disable if no more edited rows
+                 if (document.querySelectorAll('.edited').length === 0) {
+                    setSaveButtonDisabled(true);
+                 }
             }
         }
         
@@ -668,7 +1234,7 @@
             };
 
             try {
-                const result = await apiCall('getPhoto', { id: employeeId });
+                const result = await apiCall('getPhoto', { id: employeeId }, 'none'); 
                 DOM.employeePhoto.src = result.photoUrl || `https://placehold.co/128x128/EBF4FF/7F9CF5?text=No+Photo`;
             } catch (error) {
                 DOM.employeePhoto.src = `https://placehold.co/128x128/EBF4FF/7F9CF5?text=Error`;
@@ -676,6 +1242,7 @@
         }
 
         function openModal(data) {
+            // data គឺជា array នៃ strings
             getEl('modal-name').textContent = data[4] || 'N/A';
             getEl('modal-id').textContent = data[6] || 'N/A';
             getEl('modal-department').textContent = data[3] || 'N/A';
@@ -690,171 +1257,176 @@
             DOM.detailModal.classList.remove('hidden');
         }
 
-        // --- AUTHENTICATION FUNCTIONS ---
-        function populateUserDropdown() {
-            const fragment = document.createDocumentFragment();
-            for (const email in USERS) {
-                const option = document.createElement('option');
-                option.value = email;
-                option.textContent = USERS[email];
-                fragment.appendChild(option);
-            }
-            DOM.userSelect.appendChild(fragment);
-        }
-        
-        function startOtpCooldown() {
-            state.otpCooldown = 30;
-            DOM.sendOtpBtn.disabled = true;
-            const interval = setInterval(() => {
-                state.otpCooldown--;
-                if (state.otpCooldown > 0) {
-                    DOM.sendOtpText.textContent = `ផ្ញើម្ដងទៀត (${state.otpCooldown}វិនាទី)`;
+        async function handleCheckComplete() {
+            DOM.completeDatesModal.classList.remove('hidden');
+            DOM.completeDatesBody.innerHTML = `<div class="flex justify-center items-center py-8"><div class="loader"></div></div>`;
+
+            try {
+                const completeDates = await apiCall('getCompleteDates', {}, 'check'); 
+                
+                if (completeDates.length === 0) {
+                     DOM.completeDatesBody.innerHTML = `<p class="text-center text-gray-600 py-4">រកមិនឃើញថ្ងៃណាដែលមានទិន្នន័យពេញលេញ ១០០% ទេ នៅក្នុងខែបច្ចុប្បន្ននេះ។</p>`;
                 } else {
-                    clearInterval(interval);
-                    DOM.sendOtpBtn.disabled = false;
-                    DOM.sendOtpText.textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
+                    let listHtml = '<ul class="space-y-2 list-disc list-inside text-gray-700">';
+                    completeDates.forEach(dateStr => {
+                        listHtml += `<li class="p-2 bg-green-50 rounded-md">${dateStr}</li>`;
+                    });
+                    listHtml += '</ul>';
+                    DOM.completeDatesBody.innerHTML = listHtml;
                 }
-            }, 1000);
-        }
 
-        async function handleSendOtp() {
-            const selectedEmail = DOM.userSelect.value;
-            if (!selectedEmail) {
-                showLoginStatus('សូមជ្រើសរើសឈ្មោះរបស់អ្នកជាមុនសិន', true);
-                return;
-            }
-
-            DOM.sendOtpBtn.disabled = true;
-            DOM.sendOtpText.textContent = 'កំពុងផ្ញើ...';
-            showLoginStatus('');
-
-            try {
-                await apiCall('sendOtp', { email: selectedEmail });
-                DOM.loginForm.classList.add('hidden');
-                DOM.otpForm.classList.remove('hidden');
-                DOM.userEmailDisplay.textContent = selectedEmail;
-                showLoginStatus('លេខកូដត្រូវបានផ្ញើដោយជោគជ័យ', false);
-                DOM.otpInput.focus();
-                startOtpCooldown();
             } catch (error) {
-                showLoginStatus(`មានបញ្ហាក្នុងការផ្ញើ OTP: ${error.message}`, true);
-                DOM.sendOtpBtn.disabled = false;
-                DOM.sendOtpText.textContent = 'ផ្ញើលេខកូដ (OTP) ម្ដងទៀត';
+                 DOM.completeDatesBody.innerHTML = `<p class="text-center text-red-600 py-4">មានបញ្ហាក្នុងការទាញទិន្នន័យ៖ ${error.message}</p>`;
             }
         }
 
-        async function handleVerifyOtp() {
-            const selectedEmail = DOM.userSelect.value;
-            const otp = DOM.otpInput.value;
-            if (otp.length !== 6) {
-                showLoginStatus('សូមបញ្ចូលលេខកូដ OTP 6 ខ្ទង់', true);
-                return;
-            }
-            
-            DOM.verifyOtpBtn.disabled = true;
-            DOM.verifyOtpBtn.textContent = 'កំពុងផ្ទៀងផ្ទាត់...';
-            showLoginStatus('');
+        // --- NEW AUTHENTICATION FUNCTIONS ---
+        function handleLogin(e) {
+            e.preventDefault(); // Prevent form submission
+            const username = DOM.usernameInput.value.trim();
+            const password = DOM.passwordInput.value;
 
-            try {
-                await apiCall('verifyOtp', { email: selectedEmail, otp });
-                const loggedInUser = { email: selectedEmail, name: USERS[selectedEmail] };
-                localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
-                showMainContent(loggedInUser);
-            } catch (error) {
-                 showLoginStatus(`ការផ្ទៀងផ្ទាត់មិនត្រឹមត្រូវ: ${error.message}`, true);
-            } finally {
-                DOM.verifyOtpBtn.disabled = false;
-                DOM.verifyOtpBtn.textContent = 'បញ្ជាក់ និងចូលប្រើ';
+            if (username === CORRECT_USERNAME && password === CORRECT_PASSWORD) {
+                if (DOM.rememberMe.checked) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                }
+                showMainContent();
+                // Start loading data *after* login
+                initializeApp(); 
+            } else {
+                DOM.loginStatus.textContent = 'ឈ្មោះ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ';
             }
         }
-        
+
         function handleLogout() {
-            localStorage.removeItem('loggedInUser');
-            state.currentUser = null;
-            DOM.loginScreen.classList.remove('hidden');
+            localStorage.removeItem('isLoggedIn');
             DOM.mainContent.classList.add('hidden');
-            DOM.otpInput.value = '';
-            DOM.userSelect.value = '';
-            DOM.loginForm.classList.remove('hidden');
-            DOM.otpForm.classList.add('hidden');
-            showLoginStatus('');
-        }
-        
-        function showMainContent(user) {
-            state.currentUser = user;
-            DOM.loginScreen.classList.add('hidden');
-            DOM.mainContent.classList.remove('hidden');
-            DOM.loggedInUserSpan.textContent = user.name;
-            
-            // MODIFIED: Do not fetch data automatically. Show instruction message.
-            showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ហើយចុចប៊ូតុង "ស្វែងរក" ដើម្បីទាញយកទិន្នន័យ។');
-            state.allData = []; // Clear previous data
-            applyFiltersAndRender(); // Render an empty table to clear previous results
+            DOM.loginScreen.classList.remove('hidden');
+            DOM.passwordInput.value = '';
+            DOM.loginStatus.textContent = '';
+            // Clear all data on logout
+            state.monthlyDataCache.clear();
+            state.currentDayData = [];
+            state.filteredData = [];
+            renderTableView([]);
+            renderCardView([]);
+            updateSummary([]);
         }
 
-        function checkLoginSession() {
-            const storedUser = localStorage.getItem('loggedInUser');
-            if (!storedUser) return;
-            try {
-                const user = JSON.parse(storedUser);
-                if (user && user.email && user.name) {
-                    showMainContent(user);
-                }
-            } catch (e) {
-                localStorage.removeItem('loggedInUser');
-            }
+        function showMainContent() {
+            DOM.mainContent.classList.remove('hidden');
+            DOM.loginScreen.classList.add('hidden');
+            DOM.loginStatus.textContent = '';
         }
 
         // --- EVENT LISTENER SETUP ---
         function setupEventListeners() {
+            // Edit data (Table)
             DOM.dataTableBody.addEventListener('input', e => {
                 if (e.target.isContentEditable) {
                     e.target.closest('tr').classList.add('edited');
-                    DOM.updateDataBtn.disabled = false;
+                    setSaveButtonDisabled(false);
+                }
+            });
+            // Edit data (Card)
+            DOM.cardContainer.addEventListener('input', e => {
+                if (e.target.isContentEditable) {
+                    e.target.closest('.employee-card').classList.add('edited');
+                    setSaveButtonDisabled(false);
                 }
             });
             
-            // MODIFIED: Added click listener for the new fetch button
-            DOM.fetchDataBtn.addEventListener('click', fetchData);
+            // --- NEW AUTH LISTENERS ---
+            DOM.loginBtn.addEventListener('click', handleLogin);
+            DOM.logoutBtn_desktop.addEventListener('click', handleLogout);
+            DOM.logoutBtn_mobile.addEventListener('click', handleLogout);
 
+            // NEW Password Toggle
+            DOM.togglePassword.addEventListener('click', () => {
+                const isPassword = DOM.passwordInput.type === 'password';
+                DOM.passwordInput.type = isPassword ? 'text' : 'password';
+                DOM.eyeIconShow.classList.toggle('hidden', isPassword);
+                DOM.eyeIconHide.classList.toggle('hidden', !isPassword);
+            });
+
+            // Change date
+            DOM.dateFilter.addEventListener('change', () => {
+                if (state.currentMode === 'incomplete') {
+                    goBackToDateMode(); // Switch back to date mode if changed
+                }
+                handleDateChange(false);
+            });
+
+            // Search
             DOM.searchInput.addEventListener('input', applyFiltersAndRender);
-            DOM.updateDataBtn.addEventListener('click', updateData);
-            DOM.sendOtpBtn.addEventListener('click', handleSendOtp);
-            DOM.verifyOtpBtn.addEventListener('click', handleVerifyOtp);
-            DOM.logoutBtn.addEventListener('click', handleLogout);
             
+            // Detail Modal
             DOM.detailModal.addEventListener('click', (e) => {
                 if (e.target === DOM.detailModal || e.target === DOM.closeModalBtn || e.target.closest('button') === DOM.closeModalBtn) {
                     DOM.detailModal.classList.add('hidden');
                 }
             });
 
-            DOM.incompleteDataBtn.addEventListener('click', () => {
-                const btn = DOM.incompleteDataBtn;
-                const span = btn.querySelector('span');
-                if (state.currentMode === 'date') {
-                    state.currentMode = 'incomplete';
-                    DOM.filterSection.classList.add('hidden');
-                    DOM.searchInput.value = '';
-                    fetchIncompleteData();
-                    
-                    btn.classList.replace('bg-orange-500', 'bg-blue-500');
-                    btn.classList.replace('hover:bg-orange-600', 'hover:bg-blue-600');
-                    span.textContent = 'ត្រឡប់ទៅ Filter តាមកាលបរិច្ឆេទ';
-                } else {
-                    state.currentMode = 'date';
-                    DOM.filterSection.classList.remove('hidden');
-                    state.allData = [];
-                    applyFiltersAndRender();
-                    
-                    showStatus('សូមជ្រើសរើសកាលបរិច្ឆេទ ហើយចុចប៊ូតុង "ស្វែងរក" ដើម្បីទាញយកទិន្នន័យ។');
-                    
-                    btn.classList.replace('bg-blue-500', 'bg-orange-500');
-                    btn.classList.replace('hover:bg-blue-600', 'hover:bg-orange-600');
-                    span.textContent = 'បង្ហាញទិន្នន័យមិនពេញលេញ (ទាំងអស់)';
+            // Complete Dates Modal
+            DOM.completeDatesModal.addEventListener('click', (e) => {
+                 if (e.target === DOM.completeDatesModal || e.target === DOM.closeCompleteModalBtn || e.target.closest('button') === DOM.closeCompleteModalBtn) {
+                    DOM.completeDatesModal.classList.add('hidden');
                 }
             });
+
+            // --- Setup Listeners for ALL buttons ---
+            // Desktop
+            DOM.refreshDataBtn_desktop.addEventListener('click', () => {
+                goBackToDateMode(); 
+                handleDateChange(true); 
+            });
+            DOM.updateDataBtn_desktop.addEventListener('click', updateData);
+            DOM.incompleteDataBtn_desktop.addEventListener('click', () => {
+                if (state.currentMode === 'date') {
+                    fetchIncompleteData();
+                } else {
+                    goBackToDateMode();
+                }
+            });
+            DOM.checkCompleteBtn_desktop.addEventListener('click', handleCheckComplete);
             
+            // Mobile
+            DOM.navBtnHome.addEventListener('click', () => {
+                showMobilePage('main');
+                if (state.currentMode === 'incomplete') {
+                    goBackToDateMode();
+                }
+            });
+            DOM.navBtnData.addEventListener('click', () => {
+                showMobilePage('data');
+                if (state.currentMode === 'incomplete') {
+                    goBackToDateMode();
+                }
+            });
+            DOM.navBtnIncomplete.addEventListener('click', () => {
+                if (state.currentMode === 'date') {
+                    fetchIncompleteData(); // This will auto-switch to data page
+                } else {
+                    goBackToDateMode();
+                    showMobilePage('data'); // Go back to data page (date mode)
+                }
+            });
+            DOM.navBtnCheck.addEventListener('click', handleCheckComplete);
+            DOM.navBtnSave.addEventListener('click', updateData);
+
+            
+            // --- Swipe Gestures (Mobile) ---
+            DOM.cardContainer.addEventListener('touchstart', (e) => {
+                state.touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+            
+            DOM.cardContainer.addEventListener('touchend', (e) => {
+                state.touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, { passive: true });
+
+            
+            // Sorting (Table only)
             document.querySelectorAll('.sortable-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const index = parseInt(header.dataset.colIndex, 10);
@@ -869,14 +1441,32 @@
             });
         }
         
-        // --- INITIALIZATION ---
+        // --- NEW INITIALIZATION (MOVED DATA LOAD) ---
+        function initializeApp() {
+            if (!validateWebAppUrl()) return;
+            
+            // Set date filter to today and fetch data automatically
+            const today = new Date();
+            DOM.dateFilter.value = getYYYYMMDD(today);
+            state.currentSelectedDate = DOM.dateFilter.value;
+            showMobilePage('main'); // Start on main page
+            goBackToDateMode(); // Set initial active button
+            handleDateChange(false); // Fetch data for today
+        }
+
+        // --- MODIFIED INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
-            populateUserDropdown();
+            // Setup base listeners first
             setupEventListeners();
-            checkLoginSession();
+            
+            // Check login status
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                showMainContent();
+                initializeApp(); // Load data if already logged in
+            } else {
+                DOM.loginScreen.classList.remove('hidden'); // Show login screen
+            }
         });
     </script>
 </body>
 </html>
-
-
